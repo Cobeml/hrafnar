@@ -26,6 +26,9 @@ RUN pip3 install git+https://github.com/huggingface/transformers
 # Install Qwen dependencies
 RUN pip3 install qwen-vl-utils accelerate bitsandbytes
 
+# Install API dependencies
+RUN pip3 install fastapi uvicorn python-multipart
+
 # Other deps
 RUN pip3 install pymavlink
 
