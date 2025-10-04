@@ -10,8 +10,9 @@ from openai import OpenAI
 from datetime import datetime
 import os
 import json
+from dotenv import load_dotenv
 
-DRONE_API = "http://100.99.98.39:8001"
+DRONE_API = "http://100.99.98.39:8003"
 
 class EnhancedSimulationObserver:
     def __init__(self, openai_api_key, perplexity_api_key=None):
@@ -175,6 +176,9 @@ Environment: Indoor curved gridroom with people walking around
             time.sleep(self.summary_interval)
 
 def main():
+    # Load environment variables from .env file
+    load_dotenv()
+    
     openai_key = os.getenv('OPENAI_API_KEY')
     perplexity_key = os.getenv('PERPLEXITY_API_KEY')  # Optional
     

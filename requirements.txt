@@ -26,6 +26,7 @@ pymavlink>=2.4.0
 
 pyyaml>=6.0
 toml>=0.10.2
+python-dotenv>=1.0.0
 
 # ============================================
 # Utilities
