@@ -44,21 +44,27 @@ async def process_command(text_command: str):
     if not controller:
         return {"error": "Controller not ready"}
     
-    # Process with VLM
-    action_data = controller.process_command(text_command)
-    
-    # Execute
-    result = controller.execute_action(action_data)
-    
-    return {
-        "command": text_command,
-        "observation": action_data['observation'],
-        "action": action_data['action'],
-        "params": action_data['params'],
-        "reasoning": action_data['reasoning'],
-        "result": result,
-        "response": f"{action_data['observation']} {result}"
-    }
+    try:
+        # Process with VLM - returns a dict
+        action_data = controller.process_command(text_command)
+        
+        # Execute - also needs dict
+        result = controller.execute_action(action_data)
+        
+        return {
+            "command": text_command,
+            "observation": action_data.get('observation', ''),
+            "action": action_data.get('action', ''),
+            "params": action_data.get('params', {}),
+            "reasoning": action_data.get('reasoning', ''),
+            "result": result,
+            "response": f"{action_data.get('observation', '')} {result}"
+        }
+    except Exception as e:
+        print(f"❌ Error processing command: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e), "response": f"Error: {str(e)}"}
 
 @app.get("/status")
 async def get_status():

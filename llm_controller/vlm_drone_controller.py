@@ -121,10 +121,15 @@ class VLMDroneController(Node):
     def process_command(self, user_command):
         """
         Process command with VLM vision + reasoning
-        Returns: (action, params, observation, reasoning)
+        Returns: dict with action_data
         """
         if self.latest_image is None:
-            return None, None, "No camera feed", "Cannot proceed without vision"
+            return {
+                'observation': "No camera feed",
+                'action': None,
+                'params': {},
+                'reasoning': "Cannot proceed without vision"
+            }
             
         # Create prompt with system instructions
         messages = [{
@@ -174,9 +179,19 @@ class VLMDroneController(Node):
         print(f"⏱️  VLM response time: {latency:.2f}s")
         print(f"\n🤖 VLM Response:\n{response}\n")
         
-        # Parse response
+        # Parse response - returns a dict
         action_data = self._parse_response(response)
-        return action_data
+        
+        # Make sure it's a dict (not a tuple)
+        if not isinstance(action_data, dict):
+            return {
+                'observation': str(response),
+                'action': None,
+                'params': {},
+                'reasoning': "Failed to parse response"
+            }
+        
+        return action_data  # Return the dict directly
         
     def _parse_response(self, response):
         """Extract action, params, observation, reasoning"""
