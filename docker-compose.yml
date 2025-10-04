@@ -71,18 +71,20 @@ services:
     image: hrafnar-vlm-controller:latest
     container_name: hrafnar_vlm_controller
     network_mode: host
+    runtime: nvidia  # Add this!
     environment:
       - ROS_DOMAIN_ID=0
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:/app
-      - HF_HOME=/root/.cache/huggingface  # Tell HF where cache is
+      - HF_HOME=/root/.cache/huggingface
+      - NVIDIA_VISIBLE_DEVICES=all  # Add this!
+      - NVIDIA_DRIVER_CAPABILITIES=all  # Add this!
     volumes:
       - ./llm_controller:/app/llm_controller
       - ./drone_controller.py:/app/drone_controller.py
-      - ~/.cache/huggingface:/root/.cache/huggingface  # Mount cache (read-only)
+      - ~/.cache/huggingface:/root/.cache/huggingface
       - /dev/shm:/dev/shm
-    runtime: nvidia
     stdin_open: true
     tty: true
     command: tail -f /dev/null
