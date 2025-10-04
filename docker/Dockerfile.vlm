@@ -15,8 +15,10 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade Pillow
 
 # Install PyTorch NIGHTLY (supports RTX 5070 sm_120!)
-# Only need torch, not torchvision
 RUN pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu124
+
+# Install stable torchvision (from PyPI, not nightly)
+RUN pip3 install torchvision
 
 # Install transformers from source
 RUN pip3 install git+https://github.com/huggingface/transformers
