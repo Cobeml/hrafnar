@@ -1,0 +1,13 @@
+FROM nvcr.io/nvidia/isaac-sim:4.5.0
+
+# Install additional dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up ROS2 environment
+ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+ENV ROS_DOMAIN_ID=0
+
+WORKDIR /workspace

@@ -1,0 +1,101 @@
+# Hrafnar: Autonomous Military Drone System
+# Python Requirements
+#
+# Installation:
+#   pip install -r requirements.txt
+#
+# Note: Isaac Sim and Pegasus Simulator must be installed separately
+# See: docs/setup/installation.md
+
+# ============================================
+# Core Dependencies
+# ============================================
+
+numpy>=1.24.0
+scipy>=1.10.0
+
+# ============================================
+# MAVLink Communication
+# ============================================
+
+pymavlink>=2.4.0
+
+# ============================================
+# Configuration Management
+# ============================================
+
+pyyaml>=6.0
+toml>=0.10.2
+
+# ============================================
+# Utilities
+# ============================================
+
+click>=8.1.0  # CLI framework
+
+# ============================================
+# ROS2 Dependencies (Optional - via Docker)
+# ============================================
+
+# ROS2 should be installed via Docker (recommended for Ubuntu 24.04)
+# or via system package manager on Ubuntu 22.04
+# See: docs/setup/docker_ros2.md
+
+# If running ROS2 natively on Ubuntu 22.04:
+# - Install via: sudo apt install ros-humble-desktop
+# - These packages come with ROS2:
+#   - rclpy
+#   - std_msgs
+#   - sensor_msgs
+#   - geometry_msgs
+
+# ROSboard (web dashboard) - install in Docker or with pip:
+# rosboard>=2.4.0
+
+# ============================================
+# AI/ML Dependencies (Future)
+# ============================================
+
+# Uncomment when implementing SLM/VLM components:
+# torch>=2.0.0
+# transformers>=4.30.0
+# onnxruntime-gpu>=1.15.0
+# pillow>=10.0.0
+
+# ============================================
+# Development Dependencies (Optional)
+# ============================================
+
+# Uncomment for development:
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+# black>=23.0.0
+# flake8>=6.0.0
+# mypy>=1.0.0
+
+# ============================================
+# External Dependencies (Install Separately)
+# ============================================
+
+# The following must be installed manually:
+#
+# 1. NVIDIA Isaac Sim 4.5+
+#    Download: https://developer.nvidia.com/isaac-sim
+#    Install path: ~/isaacsim/
+#
+# 2. Pegasus Simulator 4.5+
+#    Location: ~/Developing/PegasusSimulator/
+#    Install: $ISAACSIM_PYTHON_EXE -m pip install -e extensions/pegasus.simulator
+#
+# 3. PX4 Autopilot v1.14+
+#    Location: ~/Developing/PX4-Autopilot/
+#    Build: make px4_sitl_default
+#
+# 4. QGroundControl (Optional)
+#    Download: https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl.AppImage
+#    Install path: ~/QGroundControl.AppImage
+#
+# 5. Docker (for ROS2)
+#    Install: curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+#
+# See docs/setup/installation.md for complete setup instructions
