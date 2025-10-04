@@ -65,8 +65,6 @@ services:
       - ros2_bridge
       
   vlm_controller:
-    ports:
-      - "8001:8001"  # State API
     build:
       context: .
       dockerfile: docker/Dockerfile.vlm
