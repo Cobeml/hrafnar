@@ -76,9 +76,11 @@ services:
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:/app
+      - HF_HOME=/root/.cache/huggingface  # Tell HF where cache is
     volumes:
-      - ./llm_controller:/app/llm_controller  # Mount llm_controller directory
-      - ./drone_controller.py:/app/drone_controller.py  # Mount drone controller
+      - ./llm_controller:/app/llm_controller
+      - ./drone_controller.py:/app/drone_controller.py
+      - ~/.cache/huggingface:/root/.cache/huggingface:ro  # Mount cache (read-only)
       - /dev/shm:/dev/shm
     runtime: nvidia
     stdin_open: true
@@ -86,4 +88,5 @@ services:
     command: tail -f /dev/null
     depends_on:
       - ros2_bridge
+
 
