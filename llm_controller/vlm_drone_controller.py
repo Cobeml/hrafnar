@@ -73,6 +73,8 @@ Always check your camera view before moving!
 """
 
 
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+
 class VLMDroneController(Node):
     def __init__(self):
         super().__init__('vlm_drone_controller')
@@ -95,6 +97,19 @@ class VLMDroneController(Node):
         self.processor = AutoProcessor.from_pretrained(
             "Qwen/Qwen2.5-VL-3B-Instruct",
             trust_remote_code=True
+        )
+
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        
+        self.create_subscription(
+            ROSImage,
+            '/drone1/camera/color/image_raw',
+            self.image_callback,
+            qos_profile  # Use BEST_EFFORT
         )
         
         # Initialize drone controller

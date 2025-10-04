@@ -30,14 +30,40 @@ drone_state = {
     'last_update': None
 }
 
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+
 class StateCollector(Node):
     def __init__(self):
         super().__init__('state_collector')
         
-        self.create_subscription(PoseStamped, '/drone1/state/pose', self.pose_cb, 10)
-        self.create_subscription(TwistStamped, '/drone1/state/twist', self.twist_cb, 10)
-        self.create_subscription(NavSatFix, '/drone1/sensors/gps', self.gps_cb, 10)
+        # Create BEST_EFFORT QoS profile to match Isaac Sim
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,  # Match Isaac Sim
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
         
+        self.create_subscription(
+            PoseStamped, 
+            '/drone1/state/pose', 
+            self.pose_cb, 
+            qos_profile  # Use BEST_EFFORT
+        )
+        
+        self.create_subscription(
+            TwistStamped, 
+            '/drone1/state/twist', 
+            self.twist_cb, 
+            qos_profile
+        )
+        
+        self.create_subscription(
+            NavSatFix, 
+            '/drone1/sensors/gps', 
+            self.gps_cb, 
+            qos_profile
+        )
+
     def pose_cb(self, msg):
         drone_state['position'] = {
             'x': round(msg.pose.position.x, 2),

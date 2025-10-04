@@ -155,9 +155,14 @@ Environment: Indoor curved gridroom with people walking around
         print(f"   Press Ctrl+C to stop\n")
         
         while True:
+            # Get state with debug
+            print(f"📡 Fetching state from {DRONE_API}/state...")
             state = self.get_drone_state()
             
+            print(f"📊 Received state: {state}")  # DEBUG
+            
             if state:
+                print(f"✅ State received, generating summary...")  # DEBUG
                 summary = self.generate_summary(state)
                 
                 if summary:
@@ -172,7 +177,12 @@ Environment: Indoor curved gridroom with people walking around
                         f.write(f"\n{'='*60}\n")
                         f.write(f"{datetime.now().isoformat()}\n")
                         f.write(f"{summary}\n")
+                else:
+                    print("⚠️  No summary generated")  # DEBUG
+            else:
+                print("❌ No state received")  # DEBUG
             
+            print(f"⏳ Waiting {self.summary_interval}s...\n")
             time.sleep(self.summary_interval)
 
 def main():
