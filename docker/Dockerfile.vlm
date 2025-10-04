@@ -14,8 +14,10 @@ RUN pip3 install --upgrade pip
 # Upgrade Pillow FIRST
 RUN pip3 install --upgrade Pillow
 
-# Install PyTorch
-RUN pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Install PyTorch NIGHTLY (supports RTX 5070 sm_120!)
+# Install torch first, then torchvision separately
+RUN pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu124
+RUN pip3 install --pre torchvision --index-url https://download.pytorch.org/whl/nightly/cu124
 
 # Install transformers from source
 RUN pip3 install git+https://github.com/huggingface/transformers
@@ -23,7 +25,7 @@ RUN pip3 install git+https://github.com/huggingface/transformers
 # Install Qwen dependencies
 RUN pip3 install qwen-vl-utils accelerate bitsandbytes
 
-# Other deps (removed opencv-python since we have python3-opencv from apt)
+# Other deps
 RUN pip3 install pymavlink
 
 WORKDIR /app
