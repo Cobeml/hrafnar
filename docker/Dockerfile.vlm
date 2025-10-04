@@ -1,11 +1,17 @@
 FROM osrf/ros:humble-desktop
 
-RUN apt-get update && apt-get install -y python3-pip git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    git \
+    ros-humble-cv-bridge \
+    python3-opencv \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update && apt-get remove -y python3-sympy && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --upgrade pip
 
-# Upgrade Pillow FIRST (fix the PIL.Image.Resampling error)
+# Upgrade Pillow FIRST
 RUN pip3 install --upgrade Pillow
 
 # Install PyTorch
@@ -17,8 +23,8 @@ RUN pip3 install git+https://github.com/huggingface/transformers
 # Install Qwen dependencies
 RUN pip3 install qwen-vl-utils accelerate bitsandbytes
 
-# Other deps
-RUN pip3 install pymavlink opencv-python
+# Other deps (removed opencv-python since we have python3-opencv from apt)
+RUN pip3 install pymavlink
 
 WORKDIR /app
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
