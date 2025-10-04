@@ -1,45 +1,50 @@
 #!/usr/bin/env python3
 """
-Test VLM can see and understand drone camera feed
-No movement - just vision testing
+Test VLM - Qwen2.5-VL
+Based on official Qwen documentation
 """
 
 import torch
-from transformers import Qwen2VLForConditionalGeneration, AutoProcessor, BitsAndBytesConfig
+from transformers import AutoProcessor, AutoModelForVision2Seq, BitsAndBytesConfig
 from qwen_vl_utils import process_vision_info
 from PIL import Image
 import time
 import sys
 
-# Subscribe to ROS2 camera feed
+# ROS2 imports
 sys.path.append('/opt/ros/humble/lib/python3.10/site-packages')
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image as ROSImage
 from cv_bridge import CvBridge
-import cv2
 
 class VisionTester(Node):
     def __init__(self):
         super().__init__('vision_tester')
         
-        print("Loading Qwen2.5-VL-3B in 4-bit...")
+        # Use official Qwen model loading (with trust_remote_code)
+        model_name = "Qwen/Qwen2-VL-2B-Instruct"
+        
+        print(f"Loading {model_name} in 4-bit...")
+        
+        # 4-bit quantization
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_compute_dtype=torch.float16
         )
         
-        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            "Qwen/Qwen2.5-VL-3B-Instruct",
+        # Load with AutoModel (Qwen's official way)
+        self.model = AutoModelForVision2Seq.from_pretrained(
+            model_name,
             quantization_config=bnb_config,
-            device_map="auto"
+            device_map="auto",
+            trust_remote_code=True  # Required for Qwen
         )
         
         self.processor = AutoProcessor.from_pretrained(
-            "Qwen/Qwen2.5-VL-3B-Instruct",
-            min_pixels=256*28*28,
-            max_pixels=512*28*28
+            model_name,
+            trust_remote_code=True
         )
         
         self.bridge = CvBridge()
@@ -73,15 +78,42 @@ class VisionTester(Node):
             ]
         }]
         
-        text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        image_inputs, _ = process_vision_info(messages)
-        inputs = self.processor(text=[text], images=image_inputs, return_tensors="pt").to("cuda")
+        # Process inputs
+        text = self.processor.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True
+        )
         
+        image_inputs, video_inputs = process_vision_info(messages)
+        
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt"
+        ).to("cuda")
+        
+        # Generate
         start = time.time()
         with torch.inference_mode():
-            output_ids = self.model.generate(**inputs, max_new_tokens=128)
+            output_ids = self.model.generate(
+                **inputs,
+                max_new_tokens=128
+            )
         
-        response = self.processor.batch_decode(output_ids, skip_special_tokens=True)[0]
+        # Decode
+        generated_ids = [
+            output_ids[len(input_ids):]
+            for input_ids, output_ids in zip(inputs.input_ids, output_ids)
+        ]
+        response = self.processor.batch_decode(
+            generated_ids,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True
+        )[0]
+        
         latency = time.time() - start
         
         print(f"\n🤖 VLM Response ({latency:.2f}s):\n{response}\n")
@@ -93,25 +125,16 @@ def main():
     
     print("\n=== VLM Vision Test ===\n")
     
-    # Wait for camera feed
+    # Wait for camera
+    print("Waiting for camera feed...")
     while tester.latest_image is None:
         rclpy.spin_once(tester, timeout_sec=0.1)
         time.sleep(0.1)
     
     print("📸 Camera feed received!\n")
     
-    # Test questions
-    questions = [
-        "Describe what you see in detail.",
-        "Are there any people in this image?",
-        "What objects can you identify?",
-        "Is this indoors or outdoors?"
-    ]
-    
-    for q in questions:
-        print(f"❓ Question: {q}")
-        tester.analyze_scene(q)
-        time.sleep(2)
+    # Test question
+    tester.analyze_scene("Describe what you see in this image.")
     
     rclpy.shutdown()
 
