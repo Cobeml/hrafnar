@@ -1,15 +1,20 @@
-FROM python:3.10-slim
+FROM osrf/ros:humble-desktop
 
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# Install Python packages for VLM
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch with CUDA support (from PyTorch index)
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Install PyTorch with CUDA support
+RUN pip3 install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# Install other packages (from PyPI)
-RUN pip install --no-cache-dir \
+# Install transformers and VLM packages
+RUN pip3 install --no-cache-dir \
     transformers accelerate peft bitsandbytes \
-    qwen-vl-utils pillow pymavlink
+    qwen-vl-utils pillow pymavlink opencv-python
 
-# Install ROS2 packages
-RUN pip install --no-cache-dir \
-    opencv-python
+WORKDIR /app
+
+# Source ROS2 setup in bashrc
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
