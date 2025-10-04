@@ -63,4 +63,26 @@ services:
     restart: unless-stopped
     depends_on:
       - ros2_bridge
+      
+  vlm_controller:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.vlm
+    image: hrafnar-vlm-controller:latest
+    container_name: hrafnar_vlm_controller
+    network_mode: host
+    environment:
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ./llm_controller:/app
+      - ./drone_controller.py:/app/drone_controller.py
+      - /dev/shm:/dev/shm
+    runtime: nvidia
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null
+    depends_on:
+      - ros2_bridge
 
