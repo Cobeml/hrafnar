@@ -23,7 +23,7 @@ class VisionTester(Node):
         super().__init__('vision_tester')
         
         # Use official Qwen model loading (with trust_remote_code)
-        model_name = "Qwen/Qwen2-VL-2B-Instruct"
+        model_name = "Qwen/Qwen2.5-VL-2B-Instruct"
         
         print(f"Loading {model_name} in 4-bit...")
         
