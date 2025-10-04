@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DRONE_API = "http://100.99.98.39:8000"
+DRONE_API = "http://100.99.98.39:8002"  # Changed to 8002
 DEEPL_API_KEY = os.getenv("deepl_api_key")
 DEEPL_API_URL = "https://api-free.deepl.com/v2/translate"
 
