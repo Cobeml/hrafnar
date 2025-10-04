@@ -87,7 +87,7 @@ services:
       - /dev/shm:/dev/shm
     stdin_open: true
     tty: true
-    command: tail -f /dev/null
+    command: bash -c "source /opt/ros/humble/setup.bash && python3 /app/llm_controller/vlm_api.py"
     depends_on:
       - ros2_bridge
 
