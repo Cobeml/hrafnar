@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DRONE_API = "http://100.99.98.39:8002"  # Changed to 8002
+DRONE_API = "http://100.99.98.39:8002"
 DEEPL_API_KEY = os.getenv("deepl_api_key")
 DEEPL_API_URL = "https://api-free.deepl.com/v2/translate"
 
@@ -18,11 +18,11 @@ class SimpleDroneClient:
     def __init__(self, user_language='auto'):
         """
         Args:
-            user_language: Your language code (e.g., 'ES', 'FR', 'ZH', 'AR')
-                          'auto' = auto-detect
+            user_language: Preferred language code (e.g., 'ES', 'FR', 'ZH', 'AR')
+                          'auto' = auto-detect (recommended)
         """
         self.user_language = user_language
-        print(f"✅ Text Drone Client ready! (Language: {user_language})")
+        print(f"✅ Text Drone Client ready! (Preferred language: {user_language})")
         
     def translate_to_english(self, text, source_lang='auto'):
         """Translate any language → English using DeepL"""
@@ -45,7 +45,10 @@ class SimpleDroneClient:
             translated = result['translations'][0]['text']
             detected_lang = result['translations'][0]['detected_source_language']
             
-            print(f"🌍 Translated from {detected_lang}: {text} → {translated}")
+            # Only show translation if it actually changed
+            if text.strip() != translated.strip():
+                print(f"🌍 Translated from {detected_lang}: {text} → {translated}")
+            
             return translated, detected_lang
             
         except Exception as e:
@@ -54,7 +57,11 @@ class SimpleDroneClient:
             
     def translate_from_english(self, text, target_lang):
         """Translate English → User's language"""
-        if target_lang == 'EN' or not DEEPL_API_KEY:
+        # Don't translate if target is English
+        if target_lang == 'EN':
+            return text
+            
+        if not DEEPL_API_KEY:
             return text
             
         try:
@@ -70,7 +77,11 @@ class SimpleDroneClient:
             
             result = response.json()
             translated = result['translations'][0]['text']
-            print(f"🌍 Translated to {target_lang}: {text} → {translated}")
+            
+            # Only show translation if it actually changed
+            if text.strip() != translated.strip():
+                print(f"🌍 Translated to {target_lang}: {text} → {translated}")
+            
             return translated
             
         except Exception as e:
@@ -90,14 +101,13 @@ class SimpleDroneClient:
             return f"Error: {e}"
             
     def interactive_mode(self):
-        """Text-based control in ANY language"""
+        """Text-based control - auto-detects your language"""
         print("\n💬 Type commands in any language (type 'exit' to quit)")
-        
-        source_lang = self.user_language
+        print("    Responses will match your language automatically\n")
         
         while True:
             # Get text input
-            user_input = input("\n🎯 You: ").strip()
+            user_input = input("🎯 You: ").strip()
             
             if not user_input:
                 continue
@@ -106,35 +116,33 @@ class SimpleDroneClient:
                 print("👋 Goodbye!")
                 break
             
-            # Translate to English for drone
+            # Translate to English for drone (and detect user's language)
             english_command, detected_lang = self.translate_to_english(
                 user_input, 
-                source_lang
+                'auto'  # Always auto-detect
             )
-            
-            # Remember detected language for responses
-            if detected_lang != 'EN':
-                source_lang = detected_lang
             
             # Send to drone
             print("⏳ Processing...")
             english_response = self.send_command(english_command)
             
-            # Translate response back
+            # Translate response back to DETECTED language (not selected!)
             translated_response = self.translate_from_english(
                 english_response, 
-                source_lang
+                detected_lang  # Use detected, not self.user_language
             )
             
             # Display response
-            print(f"🤖 Drone: {translated_response}")
+            print(f"🤖 Drone: {translated_response}\n")
 
 def main():
     print("\n" + "="*60)
     print("     Text-Based Multilingual Drone Controller")
     print("="*60)
     
-    # Choose language
+    print("\n💡 Tip: Just type in your language, it will auto-detect!")
+    print("   (Or select a preferred language below)")
+    
     print("\nLanguages: ES (Spanish), FR (French), DE (German),")
     print("           ZH (Chinese), JA (Japanese), AR (Arabic),")
     print("           RU (Russian), or 'auto' for auto-detect")
