@@ -23,32 +23,55 @@ from drone_controller import DroneController
 
 SYSTEM_PROMPT = """You are an autonomous drone with vision and movement capabilities.
 
-AVAILABLE TOOLS:
-1. move_forward(distance: float) - Move forward in meters (e.g., 2.0)
-2. move_backward(distance: float) - Move backward in meters  
-3. move_left(distance: float) - Move left in meters
-4. move_right(distance: float) - Move right in meters
-5. climb(distance: float) - Climb up in meters (e.g., 0.5)
-6. descend(distance: float) - Descend down in meters
-7. land() - Land at current position
-8. hover() - Stay at current position
+AVAILABLE TOOLS (these are the ONLY actions you can take):
+1. move_forward(distance: float) - Move forward in meters
+2. move_right(distance: float) - Move right in meters (negative = left)
+3. climb(distance: float) - Climb up in meters (works from ground or air)
+4. descend(distance: float) - Descend down in meters
+5. rotate(degrees: float) - Rotate in degrees (positive = clockwise, negative = counter-clockwise)
+6. land() - Land at current position (no parameters)
+
+IMPORTANT RULES:
+- To move LEFT: use move_right with NEGATIVE distance (e.g., move_right(-2.0))
+- To move BACKWARD: use move_forward with NEGATIVE distance (e.g., move_forward(-2.0))
+- To ROTATE LEFT: use rotate with NEGATIVE degrees (e.g., rotate(-90))
+- To ROTATE RIGHT: use rotate with POSITIVE degrees (e.g., rotate(90))
+- To TAKEOFF: use climb() from any altitude (ground or air)
 
 RESPONSE FORMAT:
-When given a command, respond with:
 OBSERVATION: <what you see in the camera>
-ACTION: <tool_name>
-PARAMS: {"distance": <number>}
+ACTION: <exact tool name>
+PARAMS: {"distance": <number>} OR {"degrees": <number>}
 REASONING: <why you chose this action>
 
-Example:
-User: "Fly forward 3 meters"
-OBSERVATION: I see an open space ahead with no obstacles.
-ACTION: move_forward
-PARAMS: {"distance": 3.0}
-REASONING: The path is clear, safe to move forward 3 meters.
+Examples:
+User: "Takeoff to 1.5 meters"
+OBSERVATION: I am on the ground.
+ACTION: climb
+PARAMS: {"distance": 1.5}
+REASONING: Need to climb from ground to 1.5m altitude.
+
+User: "Turn left 90 degrees"
+OBSERVATION: I see a wall ahead.
+ACTION: rotate
+PARAMS: {"degrees": -90}
+REASONING: Rotating left (counter-clockwise) 90 degrees.
+
+User: "Rotate right 45 degrees"
+OBSERVATION: I want to face right.
+ACTION: rotate
+PARAMS: {"degrees": 45}
+REASONING: Rotating clockwise 45 degrees.
+
+User: "Move left 2 meters"
+OBSERVATION: I see open space to the left.
+ACTION: move_right
+PARAMS: {"distance": -2.0}
+REASONING: Moving left requires negative move_right.
 
 Always check your camera view before moving!
 """
+
 
 class VLMDroneController(Node):
     def __init__(self):
@@ -199,23 +222,33 @@ class VLMDroneController(Node):
             self.drone.arm()
         
         # Execute action
-        actions = {
-            'move_forward': lambda: self.drone.move_forward(params.get('distance', 1.0)),
-            'move_backward': lambda: self.drone.move_forward(-params.get('distance', 1.0)),
-            'move_left': lambda: self.drone.move_right(-params.get('distance', 1.0)),
-            'move_right': lambda: self.drone.move_right(params.get('distance', 1.0)),
-            'climb': lambda: self.drone.climb(params.get('distance', 0.5)),
-            'descend': lambda: self.drone.descend(params.get('distance', 0.5)),
-            'land': lambda: self.drone.land(),
-            'hover': lambda: None  # Already hovering by default
-        }
+        distance = params.get('distance', 1.0)
+        degrees = params.get('degrees', 0)
         
-        if action in actions:
-            print(f"\n🚁 Executing: {action}({params})\n")
-            actions[action]()
-            return f"Successfully executed {action}"
+        if action == 'move_forward':
+            self.drone.move_forward(distance)
+            direction = "forward" if distance > 0 else "backward"
+            return f"Moved {direction} {abs(distance)}m"
+        elif action == 'move_right':
+            self.drone.move_right(distance)
+            direction = "right" if distance > 0 else "left"
+            return f"Moved {direction} {abs(distance)}m"
+        elif action == 'climb':
+            self.drone.climb(distance)
+            return f"Climbed {distance}m"
+        elif action == 'descend':
+            self.drone.descend(distance)
+            return f"Descended {distance}m"
+        elif action == 'rotate':
+            self.drone.rotate(degrees)
+            direction = "clockwise" if degrees > 0 else "counter-clockwise"
+            return f"Rotated {direction} {abs(degrees)}°"
+        elif action == 'land':
+            self.drone.land()
+            return "Landed successfully"
         else:
-            return f"Unknown action: {action}"
+            return f"Unknown action: {action}. Available: move_forward, move_right, climb, descend, rotate, land"
+
 
 def main():
     rclpy.init()

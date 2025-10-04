@@ -199,6 +199,34 @@ class DroneController:
             0, 0, 0, 0, 0, 0, 0, 0)
         print("🔒 Disarmed")
         self.armed = False
+    def rotate(self, degrees):
+        """
+        Rotate by degrees (positive = clockwise, negative = counter-clockwise)
+        """
+        print(f"🔄 Rotating {degrees}°...")
+        
+        # Convert degrees to radians
+        yaw_rad = math.radians(degrees)
+        
+        # Current yaw + change
+        new_yaw = self.target_yaw + yaw_rad
+        
+        if not self.offboard_mode:
+            print("⚠️  Entering OFFBOARD mode...")
+            self.set_offboard_mode()
+            
+        if not self.armed:
+            self.arm()
+        
+        # Update target yaw
+        self.target_yaw = new_yaw
+        
+        # Wait for rotation (assume ~45 deg/sec)
+        duration = abs(degrees) / 45.0
+        time.sleep(max(duration, 1.0))
+        
+        print(f"✅ Rotated {degrees}°")
+
 
 if __name__ == "__main__":
     drone = DroneController()
