@@ -27,18 +27,24 @@ class DroneController:
             self.master.target_component,
             mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
             0, 1, 0, 0, 0, 0, 0, 0)
+        
         print("🔓 Arming...")
         time.sleep(2)
         self.armed = True
+        return "Armed"
         
-    def set_mode(self, mode='OFFBOARD'):
-        """Set flight mode"""
-        mode_id = self.master.mode_mapping()[mode]
-        self.master.mav.set_mode_send(
+    def disarm(self):
+        """Disarm the drone"""
+        self.master.mav.command_long_send(
             self.master.target_system,
-            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-            mode_id)
-        print(f"🎮 Mode set to {mode}")
+            self.master.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0, 0, 0, 0, 0, 0, 0, 0)
+        
+        print("🔒 Disarming...")
+        self.armed = False
+        time.sleep(1)
+        return "Disarmed"
         
     def takeoff(self, altitude=1.5):
         """
@@ -47,114 +53,112 @@ class DroneController:
         if not self.armed:
             self.arm()
         
-        self.set_mode('OFFBOARD')
-        
-        # Send takeoff command
-        self.master.mav.command_long_send(
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
-            0, 0, 0, 0, 0, 0, 0, altitude)
-        
+        # For PX4, use position setpoints instead of takeoff command
+        # Set to OFFBOARD mode by sending setpoints
         print(f"🚁 Taking off to {altitude}m...")
+        
+        # Send setpoints to climb
+        for i in range(50):  # Send for 5 seconds
+            self.master.mav.set_position_target_local_ned_send(
+                0,
+                self.master.target_system,
+                self.master.target_component,
+                mavutil.mavlink.MAV_FRAME_LOCAL_NED,
+                0b0000111111111000,  # Position mask
+                0, 0, -altitude,  # NED: z is negative for up
+                0, 0, 0,
+                0, 0, 0,
+                0, 0)
+            time.sleep(0.1)
+        
         self.current_altitude = altitude
-        time.sleep(5)  # Wait for takeoff
         return f"Takeoff complete at {altitude}m"
         
     def land(self):
         """Land the drone"""
-        self.master.mav.command_long_send(
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_CMD_NAV_LAND,
-            0, 0, 0, 0, 0, 0, 0, 0)
-        
         print("🛬 Landing...")
-        time.sleep(5)
-        self.armed = False
+        
+        # Gradually descend to ground
+        for alt in range(int(self.current_altitude * 10), -1, -1):
+            self.master.mav.set_position_target_local_ned_send(
+                0,
+                self.master.target_system,
+                self.master.target_component,
+                mavutil.mavlink.MAV_FRAME_LOCAL_NED,
+                0b0000111111111000,
+                0, 0, -alt/10.0,
+                0, 0, 0,
+                0, 0, 0,
+                0, 0)
+            time.sleep(0.1)
+        
+        time.sleep(2)
+        self.disarm()
         return "Landing complete"
         
     def move_forward(self, distance=1.0, speed=0.5):
         """Move forward by distance (meters)"""
+        print(f"➡️  Moving forward {distance}m...")
         return self._move_relative(distance, 0, 0, speed)
         
     def move_backward(self, distance=1.0, speed=0.5):
         """Move backward by distance (meters)"""
+        print(f"⬅️  Moving backward {distance}m...")
         return self._move_relative(-distance, 0, 0, speed)
         
     def move_left(self, distance=1.0, speed=0.5):
         """Move left by distance (meters)"""
+        print(f"⬅️  Moving left {distance}m...")
         return self._move_relative(0, -distance, 0, speed)
         
     def move_right(self, distance=1.0, speed=0.5):
         """Move right by distance (meters)"""
+        print(f"➡️  Moving right {distance}m...")
         return self._move_relative(0, distance, 0, speed)
         
     def rotate(self, degrees):
         """Rotate heading by degrees (positive = clockwise)"""
-        yaw_rate = math.radians(degrees) / 2.0  # Convert to rad/s
-        
-        self.master.mav.set_position_target_local_ned_send(
-            0,
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,
-            0b0000111111000111,  # Use yaw rate
-            0, 0, 0,  # Position (ignored)
-            0, 0, 0,  # Velocity (ignored)
-            0, 0, 0,  # Acceleration (ignored)
-            0, yaw_rate)
-        
         print(f"🔄 Rotating {degrees}°...")
-        time.sleep(2)
+        
+        yaw_rad = math.radians(degrees)
+        duration = abs(degrees) / 45.0  # ~45 deg/sec
+        
+        # Send yaw setpoint repeatedly
+        for i in range(int(duration * 10)):
+            self.master.mav.set_position_target_local_ned_send(
+                0,
+                self.master.target_system,
+                self.master.target_component,
+                mavutil.mavlink.MAV_FRAME_BODY_NED,
+                0b0000111111000111,  # Yaw angle mask
+                0, 0, -self.current_altitude,
+                0, 0, 0,
+                0, 0, 0,
+                yaw_rad, 0)
+            time.sleep(0.1)
+        
         return f"Rotated {degrees} degrees"
         
     def _move_relative(self, x, y, z, speed):
         """Internal: Move relative to current position"""
         duration = abs(max(x, y, z)) / speed
+        steps = int(duration * 10)
         
-        self.master.mav.set_position_target_local_ned_send(
-            0,
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,
-            0b0000111111111000,  # Use position
-            x, y, z,
-            0, 0, 0,
-            0, 0, 0,
-            0, 0)
+        for i in range(steps):
+            progress = (i + 1) / steps
+            self.master.mav.set_position_target_local_ned_send(
+                0,
+                self.master.target_system,
+                self.master.target_component,
+                mavutil.mavlink.MAV_FRAME_BODY_NED,
+                0b0000111111111000,
+                x * progress, y * progress, -(self.current_altitude + z * progress),
+                0, 0, 0,
+                0, 0, 0,
+                0, 0)
+            time.sleep(0.1)
         
-        print(f"➡️  Moving ({x:.1f}, {y:.1f}, {z:.1f})m...")
-        time.sleep(duration)
-        return f"Moved to relative position ({x}, {y}, {z})"
-
-# LLM-friendly function interface
-def execute_command(command: str, **kwargs) -> str:
-    """
-    Execute a drone command from natural language
-    
-    Examples:
-        execute_command("takeoff")
-        execute_command("move_forward", distance=2.0)
-        execute_command("rotate", degrees=90)
-        execute_command("land")
-    """
-    controller = DroneController()
-    
-    commands = {
-        "takeoff": controller.takeoff,
-        "land": controller.land,
-        "move_forward": controller.move_forward,
-        "move_backward": controller.move_backward,
-        "move_left": controller.move_left,
-        "move_right": controller.move_right,
-        "rotate": controller.rotate
-    }
-    
-    if command in commands:
-        return commands[command](**kwargs)
-    else:
-        return f"Unknown command: {command}"
+        return f"Moved relative position ({x}, {y}, {z})"
 
 if __name__ == "__main__":
     # Test the controller
@@ -162,9 +166,9 @@ if __name__ == "__main__":
     
     print("\n=== Testing Drone Controller ===\n")
     drone.takeoff(altitude=1.5)
-    time.sleep(2)
+    time.sleep(3)
     drone.move_forward(distance=2.0)
-    time.sleep(2)
+    time.sleep(3)
     drone.rotate(degrees=90)
-    time.sleep(2)
+    time.sleep(3)
     drone.land()
