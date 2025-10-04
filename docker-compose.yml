@@ -80,7 +80,7 @@ services:
     volumes:
       - ./llm_controller:/app/llm_controller
       - ./drone_controller.py:/app/drone_controller.py
-      - ~/.cache/huggingface:/root/.cache/huggingface:ro  # Mount cache (read-only)
+      - ~/.cache/huggingface:/root/.cache/huggingface  # Mount cache (read-only)
       - /dev/shm:/dev/shm
     runtime: nvidia
     stdin_open: true
