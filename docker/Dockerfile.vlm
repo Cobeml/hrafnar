@@ -6,13 +6,19 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
 # Install PyTorch with CUDA support
 RUN pip3 install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# Install transformers and VLM packages
+# Install transformers and VLM packages (upgrade transformers to latest)
 RUN pip3 install --no-cache-dir \
-    transformers accelerate peft bitsandbytes \
-    qwen-vl-utils pillow pymavlink opencv-python
+    transformers>=4.45.0 accelerate peft bitsandbytes \
+    pillow pymavlink opencv-python
+
+# Install Qwen-VL specific packages
+RUN pip3 install --no-cache-dir qwen-vl-utils
 
 WORKDIR /app
 
