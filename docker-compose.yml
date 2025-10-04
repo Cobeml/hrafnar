@@ -75,9 +75,10 @@ services:
       - ROS_DOMAIN_ID=0
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:/app
     volumes:
-      - ./llm_controller:/app
-      - ./drone_controller.py:/app/drone_controller.py
+      - ./llm_controller:/app/llm_controller  # Mount llm_controller directory
+      - ./drone_controller.py:/app/drone_controller.py  # Mount drone controller
       - /dev/shm:/dev/shm
     runtime: nvidia
     stdin_open: true
