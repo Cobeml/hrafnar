@@ -6,6 +6,9 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# Remove conflicting system packages
+RUN apt-get update && apt-get remove -y python3-sympy && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
 # Upgrade pip
 RUN pip3 install --upgrade pip
 
