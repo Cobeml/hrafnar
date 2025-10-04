@@ -1,50 +1,33 @@
 #!/usr/bin/env python3
 """
-Multilingual Drone Client with DeepL Translation
-Speak in ANY language → DeepL translates → Drone understands
+Text-only Multilingual Drone Client
+Type in ANY language → DeepL translates → Drone understands
 """
 
 import requests
-import whisper
-import pyttsx3
-import sounddevice as sd
-import soundfile as sf
-import numpy as np
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # Load .env file
+load_dotenv()
 
 DRONE_API = "http://100.99.98.39:8000"
-DEEPL_API_KEY = os.getenv("deepl_api_key")  # Your DeepL key
-DEEPL_API_URL = "https://api-free.deepl.com/v2/translate"  # Use 'api.deepl.com' for Pro
+DEEPL_API_KEY = os.getenv("deepl_api_key")
+DEEPL_API_URL = "https://api-free.deepl.com/v2/translate"
 
-class MultilingualDroneClient:
+class SimpleDroneClient:
     def __init__(self, user_language='auto'):
         """
         Args:
             user_language: Your language code (e.g., 'ES', 'FR', 'ZH', 'AR')
-                          'auto' = auto-detect from speech
+                          'auto' = auto-detect
         """
-        self.audio = pyaudio.PyAudio()
         self.user_language = user_language
-        self.detected_language = None
-        
-        # Whisper (multilingual!)
-        print("Loading Whisper multilingual model...")
-        self.whisper = whisper.load_model("base")  # Supports 99 languages
-        
-        # TTS
-        print("Loading TTS...")
-        self.tts_engine = pyttsx3.init()
-        self.tts_engine.setProperty('rate', 150)
-        
-        print(f"✅ Ready! Speak in any language (detecting: {user_language})")
+        print(f"✅ Text Drone Client ready! (Language: {user_language})")
         
     def translate_to_english(self, text, source_lang='auto'):
         """Translate any language → English using DeepL"""
         if not DEEPL_API_KEY:
-            print("⚠️  No DeepL API key found, using original text")
+            print("⚠️  No DeepL API key, using original text")
             return text, 'EN'
             
         try:
@@ -66,7 +49,7 @@ class MultilingualDroneClient:
             return translated, detected_lang
             
         except Exception as e:
-            print(f"Translation error: {e}")
+            print(f"⚠️  Translation error: {e}")
             return text, 'EN'
             
     def translate_from_english(self, text, target_lang):
@@ -91,40 +74,9 @@ class MultilingualDroneClient:
             return translated
             
         except Exception as e:
-            print(f"Translation error: {e}")
+            print(f"⚠️  Translation error: {e}")
             return text
             
-    def speak(self, text, language='en'):
-        """Text-to-speech (English only for now)"""
-        print(f"🔊 Speaking: {text}")
-        self.tts_engine.say(text)
-        self.tts_engine.runAndWait()
-        
-    def listen(self, duration=5):
-        """Record and transcribe"""
-        print(f"🎤 Listening ({duration}s)...")
-        
-        # Record with sounddevice (much simpler!)
-        audio_data = sd.rec(
-            int(duration * 16000), 
-            samplerate=16000, 
-            channels=1, 
-            dtype='float32'
-        )
-        sd.wait()  # Wait until recording is finished
-        
-        # Transcribe
-        print("🧠 Transcribing...")
-        result = self.whisper.transcribe(audio_data.flatten(), fp16=False)
-        
-        original_text = result["text"]
-        detected_lang = result.get("language", "unknown")
-        
-        print(f"📝 Transcribed ({detected_lang}): {original_text}")
-        self.detected_language = detected_lang.upper()
-        
-        return original_text
-        
     def send_command(self, text_command):
         """Send command to drone"""
         try:
@@ -138,56 +90,67 @@ class MultilingualDroneClient:
             return f"Error: {e}"
             
     def interactive_mode(self):
-        """Voice control in ANY language"""
-        self.speak("Multilingual drone system ready")
+        """Text-based control in ANY language"""
+        print("\n💬 Type commands in any language (type 'exit' to quit)")
+        
+        source_lang = self.user_language
         
         while True:
-            input("\nPress Enter to speak (any language, Ctrl+C to exit)...")
+            # Get text input
+            user_input = input("\n🎯 You: ").strip()
             
-            # Listen in user's language
-            original_command = self.listen(duration=4)
-            
-            if "exit" in original_command.lower() or "salir" in original_command.lower():
-                self.speak("Shutting down")
+            if not user_input:
+                continue
+                
+            if user_input.lower() in ['exit', 'quit', 'salir', 'quitter']:
+                print("👋 Goodbye!")
                 break
             
-            # Translate to English for VLM
-            english_command, source_lang = self.translate_to_english(
-                original_command, 
-                self.user_language
+            # Translate to English for drone
+            english_command, detected_lang = self.translate_to_english(
+                user_input, 
+                source_lang
             )
             
+            # Remember detected language for responses
+            if detected_lang != 'EN':
+                source_lang = detected_lang
+            
             # Send to drone
-            self.speak("Processing")
+            print("⏳ Processing...")
             english_response = self.send_command(english_command)
             
-            # Translate response back to user's language
+            # Translate response back
             translated_response = self.translate_from_english(
                 english_response, 
                 source_lang
             )
             
-            # Speak response (in English for now - TTS for other languages needs additional setup)
-            self.speak(translated_response)
-            print(f"\n💬 Response: {translated_response}")
+            # Display response
+            print(f"🤖 Drone: {translated_response}")
 
 def main():
-    print("\n=== Multilingual Voice-Controlled Drone ===\n")
+    print("\n" + "="*60)
+    print("     Text-Based Multilingual Drone Controller")
+    print("="*60)
     
-    # Choose your language
-    print("Available languages: ES (Spanish), FR (French), DE (German), ZH (Chinese), JA (Japanese), AR (Arabic), RU (Russian)")
-    print("Or 'auto' for automatic detection")
+    # Choose language
+    print("\nLanguages: ES (Spanish), FR (French), DE (German),")
+    print("           ZH (Chinese), JA (Japanese), AR (Arabic),")
+    print("           RU (Russian), or 'auto' for auto-detect")
     
-    lang = input("Your language code (or 'auto'): ").strip().upper() or 'auto'
+    lang = input("\nYour language code (or press Enter for 'auto'): ").strip().upper() or 'auto'
     
-    client = MultilingualDroneClient(user_language=lang)
+    client = SimpleDroneClient(user_language=lang)
     
     # Test connection
     try:
+        print(f"\n🔌 Connecting to {DRONE_API}...")
         status = requests.get(f"{DRONE_API}/status", timeout=5).json()
-        print(f"✅ Connected to drone")
-    except:
-        print(f"❌ Cannot connect to {DRONE_API}")
+        print(f"✅ Connected to drone!")
+    except Exception as e:
+        print(f"❌ Cannot connect to {DRONE_API}: {e}")
+        print("   Make sure the drone API is running.")
         return
     
     client.interactive_mode()
