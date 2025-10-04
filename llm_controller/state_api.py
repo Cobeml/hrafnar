@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Lightweight API to serve drone state
-No OpenAI - just serves data
 """
 
 from fastapi import FastAPI
@@ -11,6 +10,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from sensor_msgs.msg import NavSatFix
 import threading
+from datetime import datetime
 
 app = FastAPI(title="Drone State API")
 
@@ -44,6 +44,7 @@ class StateCollector(Node):
             'y': round(msg.pose.position.y, 2),
             'z': round(msg.pose.position.z, 2)
         }
+        drone_state['last_update'] = datetime.now().isoformat()
         
     def twist_cb(self, msg):
         drone_state['velocity'] = {
@@ -74,7 +75,7 @@ def ros_thread():
     rclpy.spin(collector)
 
 if __name__ == "__main__":
-    # Start ROS2 in background thread
+    # Start ROS2 in background
     threading.Thread(target=ros_thread, daemon=True).start()
     
     import uvicorn
