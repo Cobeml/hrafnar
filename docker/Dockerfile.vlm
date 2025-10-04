@@ -1,30 +1,24 @@
 FROM osrf/ros:humble-desktop
 
-# Install Python packages for VLM
-RUN apt-get update && apt-get install -y \
-    python3-pip \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Remove conflicting system packages
+RUN apt-get update && apt-get install -y python3-pip git && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get remove -y python3-sympy && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
 RUN pip3 install --upgrade pip
 
-# Install PyTorch with CUDA support
-RUN pip3 install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Upgrade Pillow FIRST (fix the PIL.Image.Resampling error)
+RUN pip3 install --upgrade Pillow
 
-# Install latest transformers from GitHub (has Qwen2.5-VL support)
-RUN pip3 install --no-cache-dir git+https://github.com/huggingface/transformers.git
+# Install PyTorch
+RUN pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# Install other VLM packages
-RUN pip3 install --no-cache-dir \
-    accelerate peft bitsandbytes \
-    pillow pymavlink opencv-python \
-    qwen-vl-utils
+# Install transformers from source
+RUN pip3 install git+https://github.com/huggingface/transformers
+
+# Install Qwen dependencies
+RUN pip3 install qwen-vl-utils accelerate bitsandbytes
+
+# Other deps
+RUN pip3 install pymavlink opencv-python
 
 WORKDIR /app
-
-# Source ROS2 setup in bashrc
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
