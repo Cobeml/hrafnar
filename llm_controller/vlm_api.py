@@ -37,14 +37,14 @@ def parse_command_fallback(text_command):
     # Detect action
     if 'takeoff' in text or 'take off' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'climb',
             'params': {'distance': distance if distance > 0.1 else 1.5},
             'reasoning': 'Parsed takeoff command'
         }
     elif 'land' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'land',
             'params': {},
             'reasoning': 'Parsed land command'
@@ -54,56 +54,56 @@ def parse_command_fallback(text_command):
         if 'left' in text or 'counter' in text:
             degrees = -degrees
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'rotate',
             'params': {'degrees': degrees},
             'reasoning': f'Parsed rotation command'
         }
     elif 'climb' in text or 'up' in text or 'rise' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'climb',
             'params': {'distance': distance if distance > 0.1 else 0.5},
             'reasoning': 'Parsed climb command'
         }
     elif 'descend' in text or 'down' in text or 'lower' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'descend',
             'params': {'distance': distance if distance > 0.1 else 0.5},
             'reasoning': 'Parsed descend command'
         }
     elif 'forward' in text or 'ahead' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'move_forward',
             'params': {'distance': distance if distance > 0.1 else 2.0},
             'reasoning': 'Parsed forward movement'
         }
     elif 'backward' in text or 'back' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'move_forward',
             'params': {'distance': -(distance if distance > 0.1 else 2.0)},
             'reasoning': 'Parsed backward movement'
         }
     elif 'left' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'move_right',
             'params': {'distance': -(distance if distance > 0.1 else 2.0)},
             'reasoning': 'Parsed left movement'
         }
     elif 'right' in text:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': 'move_right',
             'params': {'distance': distance if distance > 0.1 else 2.0},
             'reasoning': 'Parsed right movement'
         }
     else:
         return {
-            'observation': 'No camera (blind mode)',
+            'observation': '',
             'action': None,
             'params': {},
             'reasoning': f'Could not parse command: {text_command}'
