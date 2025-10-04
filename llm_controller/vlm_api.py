@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 VLM Drone API
-Receives text commands from Mac client, executes with vision
+Receives text commands from Mac client, executes with or without vision
 """
 
 from fastapi import FastAPI
@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import threading
 import rclpy
 from vlm_drone_controller import VLMDroneController
+import re
 
 app = FastAPI(title="VLM Drone API")
 
@@ -21,6 +22,92 @@ app.add_middleware(
 
 # Global controller
 controller = None
+
+def parse_command_fallback(text_command):
+    """
+    Fallback command parser when vision isn't available
+    Extracts action and parameters from natural language
+    """
+    text = text_command.lower()
+    
+    # Extract numbers
+    numbers = re.findall(r'\d+\.?\d*', text)
+    distance = float(numbers[0]) if numbers else 1.0
+    
+    # Detect action
+    if 'takeoff' in text or 'take off' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'climb',
+            'params': {'distance': distance if distance > 0.1 else 1.5},
+            'reasoning': 'Parsed takeoff command'
+        }
+    elif 'land' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'land',
+            'params': {},
+            'reasoning': 'Parsed land command'
+        }
+    elif 'rotate' in text or 'turn' in text:
+        degrees = distance if distance > 0 else 90
+        if 'left' in text or 'counter' in text:
+            degrees = -degrees
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'rotate',
+            'params': {'degrees': degrees},
+            'reasoning': f'Parsed rotation command'
+        }
+    elif 'climb' in text or 'up' in text or 'rise' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'climb',
+            'params': {'distance': distance if distance > 0.1 else 0.5},
+            'reasoning': 'Parsed climb command'
+        }
+    elif 'descend' in text or 'down' in text or 'lower' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'descend',
+            'params': {'distance': distance if distance > 0.1 else 0.5},
+            'reasoning': 'Parsed descend command'
+        }
+    elif 'forward' in text or 'ahead' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'move_forward',
+            'params': {'distance': distance if distance > 0.1 else 2.0},
+            'reasoning': 'Parsed forward movement'
+        }
+    elif 'backward' in text or 'back' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'move_forward',
+            'params': {'distance': -(distance if distance > 0.1 else 2.0)},
+            'reasoning': 'Parsed backward movement'
+        }
+    elif 'left' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'move_right',
+            'params': {'distance': -(distance if distance > 0.1 else 2.0)},
+            'reasoning': 'Parsed left movement'
+        }
+    elif 'right' in text:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': 'move_right',
+            'params': {'distance': distance if distance > 0.1 else 2.0},
+            'reasoning': 'Parsed right movement'
+        }
+    else:
+        return {
+            'observation': 'No camera (blind mode)',
+            'action': None,
+            'params': {},
+            'reasoning': f'Could not parse command: {text_command}'
+        }
 
 @app.on_event("startup")
 async def startup():
@@ -40,15 +127,20 @@ async def startup():
 
 @app.post("/command")
 async def process_command(text_command: str):
-    """Process text command with VLM"""
+    """Process text command with VLM (or fallback if no vision)"""
     if not controller:
         return {"error": "Controller not ready"}
     
     try:
-        # Process with VLM - returns a dict
+        # Try VLM with vision first
         action_data = controller.process_command(text_command)
         
-        # Execute - also needs dict
+        # Check if vision was available
+        if action_data.get('observation') == 'No camera feed':
+            print("⚠️  No camera feed, using fallback parser")
+            action_data = parse_command_fallback(text_command)
+        
+        # Execute action
         result = controller.execute_action(action_data)
         
         return {
@@ -64,7 +156,19 @@ async def process_command(text_command: str):
         print(f"❌ Error processing command: {e}")
         import traceback
         traceback.print_exc()
-        return {"error": str(e), "response": f"Error: {str(e)}"}
+        
+        # Try fallback parser as last resort
+        try:
+            action_data = parse_command_fallback(text_command)
+            result = controller.execute_action(action_data)
+            return {
+                "command": text_command,
+                "response": f"[FALLBACK MODE] {result}",
+                "action": action_data['action'],
+                "params": action_data['params']
+            }
+        except:
+            return {"error": str(e), "response": f"Error: {str(e)}"}
 
 @app.get("/status")
 async def get_status():
@@ -76,10 +180,10 @@ async def get_status():
     return {
         "position": pos,
         "armed": controller.drone.armed,
-        "offboard": controller.drone.offboard_mode
+        "offboard": controller.drone.offboard_mode,
+        "camera_active": controller.latest_image is not None
     }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8002)  # Changed to 8002
-
+    uvicorn.run(app, host="0.0.0.0", port=8002)
