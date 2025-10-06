@@ -4,251 +4,265 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Hrafnar** is an AI-driven autonomous military drone system designed for operations in denied, degraded, intermittent, and limited (DDIL) communication environments. The system uses small language models (SLMs) and vision-language models (VLMs) running locally on drone platforms for intelligent decision-making with minimal ground control dependency.
+**Hrafnar** is an AI-driven autonomous military drone simulation system for testing autonomous behaviors in denied/degraded communication environments. The system combines:
 
-Primary application: Taiwan Strait defense scenarios, swarm coordination, amphibious assault defense.
+- **Physics simulation**: Isaac Sim 4.5+ with Pegasus Simulator for drone simulation
+- **Flight control**: PX4 SITL (Software-In-The-Loop) via MAVLink protocol
+- **AI autonomy**: Vision-Language Models (Qwen2.5-VL-3B) for vision-based command interpretation
+- **Multi-language support**: DeepL translation API for multilingual voice/text control
 
-## System Architecture
+The project simulates autonomous military drones that can operate with minimal ground control, using on-board AI to interpret commands and navigate using camera vision.
 
-### Dual-Mode Operation
-
-1. **High-Fidelity Simulation**: Full physics-based simulation using Isaac Sim + PX4 autopilot + Pegasus Simulator
-2. **Strategic Planning Mode**: Abstracted engagement simulation with analytics dashboard (planned)
-
-### Technology Stack
-
-- **Simulation**: NVIDIA Isaac Sim 4.5+, Pegasus Simulator 4.5+, PX4 Autopilot v1.14+
-- **ROS2**: Humble (running in Docker on Ubuntu 24.04)
-- **Languages**: Python 3.10+
-- **AI/ML** (planned): SLMs (Phi-3, Llama 3.2, Qwen2.5), VLMs (Phi-3-Vision, Moondream2)
-- **Communication**: MAVLink (PX4 ↔ companion), ROS2 topics/services
-
-## Key Paths and Locations
+## Architecture
 
 ```
-/home/cobe-liu/isaacsim/                    # Isaac Sim installation
-/home/cobe-liu/Developing/PegasusSimulator/ # Pegasus Simulator framework
-/home/cobe-liu/PX4-Autopilot/               # PX4 autopilot (SITL)
-/home/cobe-liu/Developing/hrafnar/          # This repository
-
-# Project structure:
-├── 9_people.py                    # Example: drone + people simulation
-├── spec.md                        # Full technical specification
-├── application.md                 # Military application scenarios
-├── requirements.txt               # Python dependencies
-├── docker-compose.yml             # ROS2 services (rosboard, foxglove, rosbridge)
-├── scripts/
-│   └── run_with_docker_ros2.sh   # Primary execution script
-└── ros2_ws/                       # ROS2 workspace (empty initially)
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Isaac Sim +    │────▶│   ROS2 Bridge    │────▶│  VLM Controller │
+│  PX4 SITL       │     │  (ROS2 Humble)   │     │  (Qwen2.5-VL)   │
+│  (Simulation)   │◀────│                  │◀────│                 │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+         │                      │                         │
+         │                      │                         │
+         ▼                      ▼                         ▼
+   MAVLink UDP           ROS2 Topics              FastAPI (8002)
+    (14540)         (/drone1/camera, etc.)             │
+                                                        ▼
+                                                ┌──────────────┐
+                                                │ MacBook      │
+                                                │ Client       │
+                                                │ (Any Lang)   │
+                                                └──────────────┘
 ```
+
+## Key Components
+
+### 1. Drone Controller (`drone_controller.py`)
+- Low-level MAVLink interface to PX4 autopilot
+- Provides high-level movement primitives: `move_forward()`, `move_right()`, `climb()`, `descend()`, `rotate()`, `land()`
+- Uses NED (North-East-Down) coordinate frame where Z is negative for altitude
+- Maintains continuous setpoint streaming required for PX4 OFFBOARD mode
+
+### 2. VLM Controller (`llm_controller/vlm_drone_controller.py`)
+- ROS2 node that subscribes to `/drone1/camera/color/image_raw`
+- Uses Qwen2.5-VL-3B (4-bit quantized) for vision-language processing
+- Interprets natural language commands with camera context
+- Structured prompt engineering with tool-calling format (OBSERVATION/ACTION/PARAMS/REASONING)
+- Executes actions via `DroneController`
+
+### 3. VLM API Server (`llm_controller/vlm_api.py`)
+- FastAPI server on port 8002
+- Endpoints:
+  - `POST /command?text_command=<command>` - Process and execute command
+  - `GET /status` - Get drone position, armed state, camera status
+- Includes fallback regex parser when camera feed unavailable
+
+### 4. State API (`llm_controller/state_api.py`)
+- Lightweight ROS2 state collector on port 8003
+- Subscribes to `/drone1/state/pose`, `/drone1/state/twist`, `/drone1/sensors/gps`
+- Uses BEST_EFFORT QoS to match Isaac Sim publishers
+- `GET /state` endpoint for real-time drone telemetry
+
+### 5. MacBook Client (`macbook_client.py`)
+- Text-based remote control interface
+- Auto-detects input language and translates to English via DeepL
+- Translates drone responses back to user's language
+- Requires `DEEPL_API_KEY` in `.env` file
 
 ## Development Commands
 
-### Environment Setup
-
+### Docker Compose Stack
 ```bash
-# Set Isaac Sim Python environment (required before running)
-export ISAACSIM_PYTHON_EXE=/home/cobe-liu/isaacsim/python.sh
+# Start all services (Isaac Sim, ROS2 bridge, VLM controller)
+docker compose up -d
 
-# Install Python dependencies
-pip install -r requirements.txt
-```
+# View logs
+docker compose logs -f vlm_controller
+docker compose logs -f ros2_bridge
 
-### Running Simulations
-
-```bash
-# Primary method: Run with Docker ROS2 bridge + ROSboard dashboard
-./scripts/run_with_docker_ros2.sh 9_people.py
-
-# Direct execution (if ROS2 already running)
-$ISAACSIM_PYTHON_EXE 9_people.py
-```
-
-### ROS2 Management (Docker)
-
-```bash
-# Start ROS2 services
-docker-compose up -d ros2_bridge
-
-# Start with Foxglove bridge
-docker-compose --profile foxglove up -d
-
-# Start with ROSbridge WebSocket
-docker-compose --profile rosbridge up -d
+# Restart VLM controller (after code changes)
+docker compose restart vlm_controller
 
 # Stop all services
-docker-compose down
-
-# View ROS2 topics
-docker-compose exec ros2_bridge bash -c "source /opt/ros/humble/setup.bash && ros2 topic list"
-
-# Check logs
-docker-compose logs -f ros2_bridge
+docker compose down
 ```
 
-### Dashboards
-
-- **ROSboard**: http://localhost:8888 (web-based ROS2 visualization)
-- **Foxglove**: ws://localhost:8765 (if foxglove profile enabled)
-
-### Other Tools
-
+### Running Isaac Sim (Standalone)
 ```bash
-# QGroundControl (PX4 ground station)
-~/QGroundControl.AppImage
+# Isaac Sim is typically installed at ~/isaacsim/
+# Pegasus Simulator at ~/Developing/PegasusSimulator/
 
-# Build PX4 SITL (if needed)
-cd ~/Developing/PX4-Autopilot
+# Start Isaac Sim with Pegasus example
+cd ~/Developing/PegasusSimulator/
+$ISAACSIM_PYTHON_EXE standalone/quadcopter_cameras_example.py
+
+# Wait for Isaac Sim GUI, then click PLAY button
+```
+
+### PX4 SITL (if running outside Docker)
+```bash
+cd ~/Developing/PX4-Autopilot/
 make px4_sitl_default
+
+# PX4 listens on UDP 14540 for MAVLink
 ```
 
-## Critical Configuration Notes
+### Testing Drone Control
+```bash
+# Direct MAVLink control (no VLM)
+python3 drone_controller.py
 
-### ROS2 Domain ID
+# VLM control with camera
+python3 llm_controller/vlm_drone_controller.py
 
-**Must match between Isaac Sim and Docker containers**: `ROS_DOMAIN_ID=0`
+# Start API server
+python3 llm_controller/vlm_api.py
 
-The `run_with_docker_ros2.sh` script automatically sets:
-- `RMW_IMPLEMENTATION=rmw_fastrtps_cpp`
-- `ROS_DOMAIN_ID=0`
-- `LD_LIBRARY_PATH` to include Isaac Sim's ROS2 libraries
+# Remote client from MacBook
+python3 macbook_client.py
+```
 
-### Python Script Requirements
+### ROS2 Topics (for debugging)
+```bash
+# Inside ROS2 container
+docker exec -it hrafnar_ros2_bridge bash
 
-All simulation scripts must:
+source /opt/ros/humble/setup.bash
 
-1. **Import and initialize SimulationApp first**:
-   ```python
-   from isaacsim import SimulationApp
-   simulation_app = SimulationApp({"headless": False})
-   # ALL other imports come after this
-   ```
+# List active topics
+ros2 topic list
 
-2. **Enable ROS2 bridge extension**:
-   ```python
-   from isaacsim.core.utils.extensions import enable_extension
-   enable_extension("isaacsim.ros2.bridge")
-   enable_extension("foxglove.tools.ws_bridge")  # optional
-   ```
+# Echo camera feed
+ros2 topic echo /drone1/camera/color/image_raw
 
-3. **Configure drone backends**:
-   ```python
-   from pegasus.simulator.logic.backends.px4_mavlink_backend import PX4MavlinkBackend, PX4MavlinkBackendConfig
-   from pegasus.simulator.logic.backends.ros2_backend import ROS2Backend
+# Check topic QoS
+ros2 topic info /drone1/camera/color/image_raw -v
+```
 
-   mavlink_config = PX4MavlinkBackendConfig({
-       "vehicle_id": 0,
-       "px4_autolaunch": True,
-       "px4_dir": "/home/cobe-liu/PX4-Autopilot"
-   })
+## Important Technical Details
 
-   config_multirotor.backends = [
-       PX4MavlinkBackend(mavlink_config),
-       ROS2Backend(
-           vehicle_id=1,
-           config={
-               "namespace": 'drone',
-               "pub_sensors": True,
-               "pub_graphical_sensors": True,
-               "pub_state": True,
-               "pub_tf": True,
-               "sub_control": False
-           }
-       )
-   ]
-   ```
+### Coordinate Systems
+- **NED (North-East-Down)**: PX4/MAVLink use NED where:
+  - X = forward (north)
+  - Y = right (east)
+  - Z = down (negative altitude)
+- Example: `z=-1.5` means 1.5m above ground
+- To move left: `move_right(-2.0)` (negative distance)
+- To move backward: `move_forward(-2.0)`
 
-### Conda Environment Conflicts
-
-The `run_with_docker_ros2.sh` script automatically deactivates conda environments, as they conflict with Isaac Sim's internal Python.
-
-## Simulation Components
-
-### Available from Pegasus Simulator
-
+### ROS2 QoS Profiles
+Isaac Sim publishes with `BEST_EFFORT` reliability. All ROS2 subscribers MUST use:
 ```python
-from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
-from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
-from pegasus.simulator.logic.graphical_sensors.monocular_camera import MonocularCamera
-from pegasus.simulator.logic.people.person import Person, PersonController
-from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+
+qos_profile = QoSProfile(
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10
+)
+```
+Using `RELIABLE` will cause subscription failures.
+
+### VLM Prompt Format
+The VLM expects structured outputs:
+```
+OBSERVATION: <what the camera sees>
+ACTION: <move_forward|move_right|climb|descend|rotate|land>
+PARAMS: {"distance": 2.0} or {"degrees": 90}
+REASONING: <why this action>
+```
+See `SYSTEM_PROMPT` in `vlm_drone_controller.py` for full template.
+
+### MAVLink Connection
+- Default: `udp:127.0.0.1:14540`
+- Must send setpoints at ≥20Hz for OFFBOARD mode
+- Arming requires OFFBOARD mode active first
+- Position updates arrive via `LOCAL_POSITION_NED` messages
+
+### GPU Requirements
+- VLM controller requires NVIDIA GPU with CUDA 12.4+
+- Model runs in 4-bit quantization (~3-4GB VRAM)
+- Docker containers need `runtime: nvidia` and `NVIDIA_VISIBLE_DEVICES=all`
+
+## Configuration Files
+
+### Environment Variables (`.env`)
+```
+OPENAI_API_KEY=sk-...          # For OpenAI-based features (not currently used)
+PERPLEXITY_API_KEY=...         # Optional
+deepl_api_key=...              # Required for macbook_client.py translation
 ```
 
-- **Robots**: `ROBOTS['Iris']` (quadrotor platform)
-- **Environments**: `SIMULATION_ENVIRONMENTS["Curved Gridroom"]`, etc.
-- **Sensors**: MonocularCamera, IMU, GPS, LiDAR (see Pegasus docs)
+### Docker Compose Services
+- `isaac_sim`: Isaac Sim 4.5.0 container (if using containerized Isaac)
+- `ros2_bridge`: ROS2 Humble + ROSboard dashboard (port 8888)
+- `foxglove_bridge`: Foxglove WebSocket bridge (port 8765)
+- `vlm_controller`: VLM API server (port 8002)
 
-### Typical Simulation Structure
+### Ports
+- 8002: VLM Command API
+- 8003: State API (telemetry)
+- 8888: ROSboard dashboard
+- 8765: Foxglove bridge
+- 14540: MAVLink (PX4 SITL)
 
-```python
-class PegasusApp:
-    def __init__(self):
-        self.timeline = omni.timeline.get_timeline_interface()
-        self.pg = PegasusInterface()
-        self.pg._world = World(**self.pg._world_settings)
-        self.world = self.pg.world
+## Common Workflows
 
-        # Load environment
-        self.pg.load_asset(SIMULATION_ENVIRONMENTS["Curved Gridroom"], "/World/layout")
+### Adding New Drone Actions
+1. Add method to `DroneController` class in `drone_controller.py`
+2. Update `SYSTEM_PROMPT` in `vlm_drone_controller.py` with new tool
+3. Add case in `execute_action()` method
+4. Update response parser if needed
 
-        # Create multirotor with backends
-        Multirotor("/World/quadrotor", ROBOTS['Iris'], 0, [0.0, 0.0, 0.07], ...)
+### Testing Without Isaac Sim
+The system requires Isaac Sim running for:
+- Camera feed (`/drone1/camera/color/image_raw`)
+- Position updates (MAVLink `LOCAL_POSITION_NED`)
 
-        # Reset to initialize
-        self.world.reset()
+For testing VLM parsing without simulation, use the fallback parser in `vlm_api.py` which works without vision.
 
-    def run(self):
-        self.timeline.play()
-        while simulation_app.is_running():
-            self.world.step(render=True)
+### Debugging ROS2 Issues
+1. Check QoS compatibility: `ros2 topic info <topic> -v`
+2. Verify publishers: `ros2 topic list`
+3. Echo raw messages: `ros2 topic echo <topic>`
+4. Check for topic name mismatches (e.g., `/drone1/` prefix)
+
+### Model Download
+First run downloads Qwen2.5-VL-3B-Instruct (~7GB) to `~/.cache/huggingface/`. This is mounted in Docker via:
+```yaml
+volumes:
+  - ~/.cache/huggingface:/root/.cache/huggingface
 ```
 
-## Military Application Context
+## Strategic Context
 
-**Primary scenarios** (see `application.md` for details):
-- Amphibious assault defense (high-value targets: Type 075 LHDs, Type 071 LPDs, RO-RO ferries)
-- Blockade/quarantine operations
-- ISR for coastal defense fires
-- Outlying island defense (Kinmen, Matsu)
-- Counter-swarm operations
+This system is designed for testing autonomous behaviors in military scenarios where:
+- Communication is denied/degraded (DDIL environments)
+- Drones must operate with minimal ground control
+- Visual interpretation is required for navigation
+- Multi-language command interfaces support diverse operators
 
-**Design principles**:
-- Autonomous decision-making in DDIL environments
-- Swarm coordination with mesh networking
-- Cost-asymmetric warfare (cheap drones vs expensive ships)
-- Rapid iteration on prompt engineering and tactical behaviors
+Target scenarios include amphibious defense, reconnaissance, swarm coordination, and outlying island operations (see `application.md` and `spec.md` for detailed mission profiles).
 
-## AI/ML Integration (Planned)
+## Dependencies
 
-**Model requirements**:
-- **SLM**: <100ms inference, <8GB RAM, structured JSON output (Phi-3-mini, Llama 3.2, Qwen2.5)
-- **VLM**: <200ms frame analysis, object detection, low-res tolerance (Phi-3-Vision, Moondream2)
+**External installations** (not in requirements.txt):
+- NVIDIA Isaac Sim 4.5+
+- Pegasus Simulator 4.5+
+- PX4 Autopilot v1.14+
+- Docker + NVIDIA Container Toolkit
 
-**Prompt structure**: System role + mission objectives + constraints + sensor data → JSON decision output
+**Python packages** (see `requirements.txt`):
+- pymavlink (MAVLink protocol)
+- transformers, torch (VLM inference)
+- fastapi, uvicorn (API servers)
+- rclpy (ROS2 Python bindings, installed via Docker)
+- qwen-vl-utils, bitsandbytes (quantization)
+- python-dotenv, pyyaml (config)
 
-See `spec.md` sections 4 (AI Model Integration) and 10 (Prompt Engineering) for detailed design.
+## Network Configuration
 
-## External Dependencies
+Default setup assumes:
+- Drone API at `100.99.98.39:8002` (update `DRONE_API` in `macbook_client.py`)
+- All services on same host using `network_mode: host` in Docker
 
-Must be installed separately (not in requirements.txt):
-- Isaac Sim 4.5+ (~/isaacsim/)
-- Pegasus Simulator 4.5+ (~/Developing/PegasusSimulator/)
-- PX4 Autopilot v1.14+ (~/Developing/PX4-Autopilot/)
-- Docker (for ROS2)
-- QGroundControl (optional, ~/QGroundControl.AppImage)
-
-## Development Workflow
-
-1. **Set environment**: `export ISAACSIM_PYTHON_EXE=/home/cobe-liu/isaacsim/python.sh`
-2. **Start Docker ROS2** (if needed): `docker-compose up -d ros2_bridge`
-3. **Run simulation**: `./scripts/run_with_docker_ros2.sh <script.py>` or `$ISAACSIM_PYTHON_EXE <script.py>`
-4. **Monitor via ROSboard**: http://localhost:8888
-5. **Control via QGroundControl**: `~/QGroundControl.AppImage`
-
-## Common Issues
-
-- **"ISAACSIM_PYTHON_EXE not set"**: Run `export ISAACSIM_PYTHON_EXE=/home/cobe-liu/isaacsim/python.sh`
-- **ROS2 topics not visible**: Check `ROS_DOMAIN_ID=0` in both Isaac Sim and Docker
-- **Conda conflicts**: Script auto-deactivates, or manually run `conda deactivate`
-- **Docker not running**: `sudo systemctl start docker`
-- **PX4 fails to launch**: Check `px4_dir` path in `PX4MavlinkBackendConfig`
+For remote access, ensure firewall allows ports 8002, 8003, 8888, 8765.
