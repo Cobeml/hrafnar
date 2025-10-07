@@ -32,5 +32,8 @@ RUN pip3 install fastapi uvicorn python-multipart
 # Other deps
 RUN pip3 install pymavlink
 
+# Install YOLOv11-small
+RUN pip3 install ultralytics
+
 WORKDIR /app
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc

@@ -70,6 +70,69 @@ The project simulates autonomous military drones that can operate with minimal g
 
 ## Development Commands
 
+### Operational Modes
+
+Hrafnar supports **two operational modes** depending on your needs:
+
+#### Mode 1: GUI Mode (Native Isaac Sim + ROS2)
+**Use when**: Debugging, visualization, testing drone movements with visual feedback
+
+**What runs where**:
+- Isaac Sim: Native (with GUI window)
+- PX4 SITL: Auto-launched by Isaac Sim
+- ROS2 topics: Published by Isaac Sim's ROS2 bridge
+- VLM Controller: Docker container
+- Camera feed: ✅ Available via ROS2
+
+**Launch**:
+```bash
+# Terminal 1: Start Isaac Sim with GUI + ROS2
+./scripts/run_isaac_sim_gui.sh 9_people.py
+
+# Terminal 2: Start VLM controller in Docker
+docker compose up vlm_controller
+
+# Terminal 3: Run client
+python3 drone_llm_client.py
+```
+
+**Advantages**:
+- ✅ Visual feedback (see drone movements in real-time)
+- ✅ Camera feed published to ROS2
+- ✅ VLM controller receives camera images
+- ✅ Full debugging capabilities
+
+**Disadvantages**:
+- ❌ Requires GUI environment (can't run on headless servers)
+- ❌ More resource intensive
+
+#### Mode 2: Headless Mode (Full Docker)
+**Use when**: Running on servers, CI/CD, long-duration tests, production-like environments
+
+**What runs where**:
+- Everything in Docker containers
+- No GUI window
+
+**Launch**:
+```bash
+# Start entire stack
+docker compose up -d
+
+# View logs
+docker compose logs -f vlm_controller
+```
+
+**Advantages**:
+- ✅ Runs on headless servers
+- ✅ Easier to deploy
+- ✅ All dependencies containerized
+
+**Disadvantages**:
+- ❌ No visual feedback
+- ❌ Harder to debug drone movements
+
+---
+
 ### Docker Compose Stack
 ```bash
 # Start all services (Isaac Sim, ROS2 bridge, VLM controller)
@@ -86,17 +149,41 @@ docker compose restart vlm_controller
 docker compose down
 ```
 
-### Running Isaac Sim (Standalone)
+### Running Isaac Sim with GUI (Mode 1)
 ```bash
-# Isaac Sim is typically installed at ~/isaacsim/
-# Pegasus Simulator at ~/Developing/PegasusSimulator/
+# Use the provided launch script (sets up ROS2 environment)
+./scripts/run_isaac_sim_gui.sh 9_people.py
 
-# Start Isaac Sim with Pegasus example
-cd ~/Developing/PegasusSimulator/
-$ISAACSIM_PYTHON_EXE standalone/quadcopter_cameras_example.py
+# OR manually set environment and run:
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/isaacsim/exts/isaacsim.ros2.bridge/humble/lib
+export ROS_DOMAIN_ID=0
+~/isaacsim/python.sh 9_people.py
 
-# Wait for Isaac Sim GUI, then click PLAY button
+# Isaac Sim GUI will open with:
+# - Minimal UI: 2 viewports (main god-view + drone camera) + console
+# - Drone simulation visible
+# - PX4 auto-launched
+# - Camera feed published to /drone1/camera/color/image_raw
 ```
+
+**UI Layout**:
+```
+┌────────────────────────────────────────────────┐
+│  Main God View    │    Drone Camera Feed       │
+│  (Scene Overview) │    (VLM's View)           │
+│                   │                            │
+│                   │                            │
+├────────────────────────────────────────────────┤
+│            Console (Logs)                      │
+└────────────────────────────────────────────────┘
+```
+- **Left viewport**: Main god-mode view (overview of scene)
+- **Right viewport**: Drone's onboard camera feed (what the VLM sees)
+- **Bottom panel**: Console for logs and debugging
+- **Closed**: Stage, Layer, Property, Content browser, and other unnecessary panels
+
+**Important**: The launch script configures Isaac Sim's internal ROS2 so camera feeds are published. Without this, the VLM controller won't receive camera images.
 
 ### PX4 SITL (if running outside Docker)
 ```bash
@@ -177,6 +264,16 @@ See `SYSTEM_PROMPT` in `vlm_drone_controller.py` for full template.
 - Must send setpoints at ≥20Hz for OFFBOARD mode
 - Arming requires OFFBOARD mode active first
 - Position updates arrive via `LOCAL_POSITION_NED` messages
+
+### Battery Failsafe Handling
+PX4 SITL simulates battery depletion which can interrupt long missions. The `DroneController` automatically disables battery failsafes on connection via three methods:
+1. `SIM_BAT_ENABLE=0` - Disables battery simulation entirely
+2. `COM_LOW_BAT_ACT=0` - Disables low battery failsafe action
+3. `SIM_BAT_MIN_PCT=0.9` - Keeps battery at 90% minimum
+
+To enable battery simulation (for testing battery logic), pass `disable_battery_failsafe=False` to `DroneController()`.
+
+**Important**: PX4 parameters reset after `make clean`, so battery settings must be reconfigured if PX4 is rebuilt.
 
 ### GPU Requirements
 - VLM controller requires NVIDIA GPU with CUDA 12.4+

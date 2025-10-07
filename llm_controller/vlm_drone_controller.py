@@ -7,6 +7,7 @@ Qwen2.5-VL processes camera + commands → Executes drone movements
 import sys
 sys.path.append('/app')
 
+from yolo_tracker import YOLOTracker
 import torch
 from transformers import AutoProcessor, AutoModelForVision2Seq, BitsAndBytesConfig
 from qwen_vl_utils import process_vision_info
@@ -22,6 +23,13 @@ import re
 from drone_controller import DroneController
 
 SYSTEM_PROMPT = """You are an autonomous drone with vision and movement capabilities.
+
+You have access to real-time YOLO detections showing:
+- Number of people detected
+- Their bounding box locations
+- Unique tracking IDs
+
+Use this data to inform your decisions.
 
 AVAILABLE TOOLS (these are the ONLY actions you can take):
 1. move_forward(distance: float) - Move forward in meters
@@ -125,6 +133,8 @@ class VLMDroneController(Node):
             self.image_callback,
             10
         )
+
+        self.yolo_tracker = YOLOTracker()
         
         print("✅ VLM Drone Controller ready!")
         

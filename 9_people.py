@@ -14,7 +14,20 @@ from isaacsim import SimulationApp
 # Start Isaac Sim's simulation environment
 # Note: this simulation app must be instantiated right after the SimulationApp import, otherwise the simulator will crash
 # as this is the object that will load all the extensions and load the actual simulator.
-simulation_app = SimulationApp({"headless": True})
+simulation_app = SimulationApp({
+    "headless": False,
+    "width": 1920,
+    "height": 1080,
+    # Disable unnecessary windows
+    "hide_ui": False,  # We need some UI for viewports
+    "active_gpu": 0,
+    # Minimal UI configuration
+    "window/dockPreference": {
+        "omni.kit.window.property": "left",
+        "omni.kit.window.console": "bottom",
+        "omni.kit.viewport.window": "main",
+    }
+})
 
 # -----------------------------------
 # The actual script should start here
@@ -121,17 +134,20 @@ class PegasusApp:
 
         config_multirotor = MultirotorConfig()
         # Create the multirotor configuration
+        import os
+        # Use host path when running outside Docker
+        px4_path = os.path.expanduser("~/PX4-Autopilot") if os.path.exists(os.path.expanduser("~/PX4-Autopilot")) else "/workspace/PX4-Autopilot"
         mavlink_config = PX4MavlinkBackendConfig({
             "vehicle_id": 0,
             "px4_autolaunch": True,
-            "px4_dir": "/workspace/PX4-Autopilot"
+            "px4_dir": px4_path
         })
 
         config_multirotor.backends = [
             PX4MavlinkBackend(mavlink_config),
-            ROS2Backend(vehicle_id=1, 
+            ROS2Backend(vehicle_id=1,
                 config={
-                    "namespace": 'drone', 
+                    "namespace": 'drone',
                     "pub_sensors": True,
                     "pub_graphical_sensors": True,
                     "pub_state": True,
@@ -170,8 +186,58 @@ class PegasusApp:
         # Reset the simulation environment so that all articulations (aka robots) are initialized
         self.world.reset()
 
+        # Setup dual viewport layout (main view + drone camera)
+        self._setup_viewports()
+
         # Auxiliar variable for the timeline callback example
         self.stop_sim = False
+
+    def _setup_viewports(self):
+        """Setup minimal UI with 2 viewports: main camera and drone camera feed"""
+        import omni.ui as ui
+        from omni.kit.viewport.utility import get_active_viewport_window, create_viewport_window
+
+        # Close unnecessary windows
+        windows_to_close = [
+            "Stage",
+            "Layer",
+            "Content",
+            "Render Settings",
+            "Property",
+            "Semantics Schema Editor",
+            "Extensions"
+        ]
+
+        for window_name in windows_to_close:
+            try:
+                window = ui.Workspace.get_window(window_name)
+                if window:
+                    window.visible = False
+            except:
+                pass
+
+        # Create drone camera viewport
+        try:
+            # Create second viewport for drone camera
+            drone_viewport = create_viewport_window("Drone Camera")
+
+            # Set the drone camera as active camera for this viewport
+            # The camera path is: /World/quadrotor/camera
+            import omni.kit.viewport.utility as vp_util
+            drone_viewport.viewport_api.set_active_camera("/World/quadrotor/camera")
+
+            # Position viewports side by side using QuickLayout
+            from omni.kit.quicklayout import QuickLayout
+            QuickLayout.set_layout({
+                "Viewport": {"dock_id": "left", "width": 0.5},
+                "Drone Camera": {"dock_id": "right", "width": 0.5},
+                "Console": {"dock_id": "bottom", "height": 0.2}
+            })
+
+            print("✅ Dual viewport setup complete: Main view + Drone camera")
+        except Exception as e:
+            print(f"⚠️  Could not setup dual viewport layout: {e}")
+            print("   Using default single viewport")
 
     def run(self):
         """

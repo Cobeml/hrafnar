@@ -9,31 +9,71 @@ import math
 import threading
 
 class DroneController:
-    def __init__(self, connection_string='udp:127.0.0.1:14540'):
+    def __init__(self, connection_string='udp:127.0.0.1:14540', disable_battery_failsafe=True):
         """Connect to PX4 via MAVLink"""
         print(f"Connecting to PX4 at {connection_string}...")
         self.master = mavutil.mavlink_connection(connection_string)
         self.master.wait_heartbeat()
         print("✅ Connected to PX4!")
-        
+
+        # Disable battery simulation to prevent failsafes during long missions
+        if disable_battery_failsafe:
+            self._disable_battery_failsafe()
+
         # Current state
         self.current_pos = [0, 0, 0]  # x, y, z in NED frame
         self.current_yaw = 0
         self.armed = False
         self.offboard_mode = False
-        
+
         # Target setpoint (continuously sent)
         self.target_pos = [0, 0, -1.0]  # Default: hover at 1m
         self.target_yaw = 0
-        
+
         # Start setpoint streaming thread
         self.streaming = False
         self.stream_thread = None
-        
+
         # Start position listener
         self.listen_thread = threading.Thread(target=self._listen_position, daemon=True)
         self.listen_thread.start()
         
+    def _disable_battery_failsafe(self):
+        """Disable battery simulation and failsafes to prevent interruptions during testing"""
+        print("🔋 Disabling battery failsafe...")
+
+        # Method 1: Disable battery simulation entirely
+        self.master.mav.param_set_send(
+            self.master.target_system,
+            self.master.target_component,
+            b'SIM_BAT_ENABLE',
+            0,
+            mavutil.mavlink.MAV_PARAM_TYPE_INT32
+        )
+        time.sleep(0.1)
+
+        # Method 2: Disable low battery action (failsafe won't trigger)
+        self.master.mav.param_set_send(
+            self.master.target_system,
+            self.master.target_component,
+            b'COM_LOW_BAT_ACT',
+            0,
+            mavutil.mavlink.MAV_PARAM_TYPE_INT32
+        )
+        time.sleep(0.1)
+
+        # Method 3: Set minimum battery percentage high (stays charged)
+        self.master.mav.param_set_send(
+            self.master.target_system,
+            self.master.target_component,
+            b'SIM_BAT_MIN_PCT',
+            0.9,  # Stay at 90% minimum
+            mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+        )
+        time.sleep(0.1)
+
+        print("✅ Battery failsafe disabled (simulation mode)")
+
     def _listen_position(self):
         """Listen for position updates from PX4"""
         while True:
