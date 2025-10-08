@@ -15,7 +15,7 @@ from isaacsim import SimulationApp
 # Note: this simulation app must be instantiated right after the SimulationApp import, otherwise the simulator will crash
 # as this is the object that will load all the extensions and load the actual simulator.
 simulation_app = SimulationApp({
-    "headless": False,
+    "headless": True,
     "width": 1920,
     "height": 1080,
     # Disable unnecessary windows
@@ -40,7 +40,7 @@ from isaacsim.core.utils.extensions import enable_extension
 # Enable/disable ROS bridge extensions to keep only ROS2 Bridge
 enable_extension("isaacsim.ros2.bridge")
 # enable_extension("foxglove.tools.ws_bridge")
-# enable_extension("omni.kit.livestream.webrtc")
+enable_extension("omni.kit.livestream.webrtc")  # For web-based GUI
 
 # Update the simulation app with the new extensions
 simulation_app.update()

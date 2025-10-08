@@ -1,30 +1,32 @@
 services:
-  # isaac_sim:
-  #   image: nvcr.io/nvidia/isaac-sim:4.5.0
-  #   container_name: hrafnar_isaac_sim
-  #   network_mode: host
-  #   environment:
-  #     - ACCEPT_EULA=Y
-  #     - ROS_DOMAIN_ID=0
-  #     - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-  #     - LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.bridge/humble/lib  # Add this
-  #     - PYTHONPATH=/workspace/PegasusSimulator/extensions/pegasus.simulator:$PYTHONPATH  # Add this
-  #     - ISAACSIM_PATH=/isaac-sim
-  #     - DISPLAY=${DISPLAY}
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #     - NVIDIA_DRIVER_CAPABILITIES=all
-  #   volumes:
-  #     - /tmp/.X11-unix:/tmp/.X11-unix:rw
-  #     - ./:/workspace/hrafnar
-  #     - ~/PX4-Autopilot:/workspace/PX4-Autopilot:rw
-  #     - ~/Developing/PegasusSimulator:/workspace/PegasusSimulator:rw
-  #     - /dev/shm:/dev/shm
-  #   runtime: nvidia
-  #   stdin_open: true
-  #   tty: true
-  #   command: tail -f /dev/null  # Changed this line to keep container running
-  #   depends_on:
-  #     - ros2_bridge
+  isaac_sim:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.isaacsim
+    image: hrafnar-isaac-sim:latest
+    container_name: hrafnar_isaac_sim
+    network_mode: host
+    environment:
+      - ACCEPT_EULA=Y
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - ROS_DISTRO=humble
+      - LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.bridge/humble/lib
+      - AMENT_PREFIX_PATH=/isaac-sim/exts/isaacsim.ros2.bridge/humble
+      - PYTHONPATH=/workspace/PegasusSimulator/extensions/pegasus.simulator:$PYTHONPATH
+      - ISAACSIM_PATH=/isaac-sim
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - ./:/workspace/hrafnar
+      - ~/PX4-Autopilot:/workspace/PX4-Autopilot:rw
+      - ~/Developing/PegasusSimulator:/workspace/PegasusSimulator:rw
+      - /dev/shm:/dev/shm
+    runtime: nvidia
+    stdin_open: true
+    tty: true
+    depends_on:
+      - ros2_bridge
 
 
   ros2_bridge:
@@ -49,21 +51,47 @@ services:
     command: bash -c "ros2 run rosboard rosboard_node"
     restart: unless-stopped
 
-  # foxglove_bridge:
-  #   image: hrafnar-ros2-humble:latest
-  #   container_name: hrafnar_foxglove_bridge
-  #   network_mode: host
-  #   environment:
-  #     - ROS_DOMAIN_ID=0
-  #     - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-  #     - ROS_DISTRO=humble
-  #   volumes:
-  #     - /dev/shm:/dev/shm
-  #   command: bash -c "source /opt/ros/humble/setup.bash && ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765"
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - ros2_bridge
+  foxglove_bridge:
+    image: hrafnar-ros2-humble:latest
+    container_name: hrafnar_foxglove_bridge
+    network_mode: host
+    environment:
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - ROS_DISTRO=humble
+    volumes:
+      - /dev/shm:/dev/shm
+    command: bash -c "source /opt/ros/humble/setup.bash && ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765"
+    restart: unless-stopped
+    depends_on:
+      - ros2_bridge
       
+  yolo_tracker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.vlm
+    image: hrafnar-vlm-controller:latest
+    container_name: hrafnar_yolo_tracker
+    network_mode: host
+    environment:
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:/app
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    runtime: nvidia
+    volumes:
+      - ./llm_controller:/app/llm_controller
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - /dev/shm:/dev/shm
+    stdin_open: true
+    tty: true
+    command: bash -c "source /opt/ros/humble/setup.bash && python3 /app/llm_controller/yolo_tracker.py"
+    restart: unless-stopped
+    depends_on:
+      - ros2_bridge
+
   vlm_controller:
     build:
       context: .

@@ -7,7 +7,6 @@ Qwen2.5-VL processes camera + commands → Executes drone movements
 import sys
 sys.path.append('/app')
 
-from yolo_tracker import YOLOTracker
 import torch
 from transformers import AutoProcessor, AutoModelForVision2Seq, BitsAndBytesConfig
 from qwen_vl_utils import process_vision_info
@@ -16,6 +15,7 @@ import time
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image as ROSImage
+from std_msgs.msg import String
 from cv_bridge import CvBridge
 import json
 import re
@@ -107,36 +107,45 @@ class VLMDroneController(Node):
             trust_remote_code=True
         )
 
+        # Initialize drone controller
+        print("Connecting to drone...")
+        self.drone = DroneController()
+
+        # Camera
+        self.bridge = CvBridge()
+        self.latest_image = None
+
         qos_profile = QoSProfile(
-            reliability=ReliabilityPolicy.BEST_EFFORT,
+            reliability=ReliabilityPolicy.RELIABLE,
             history=HistoryPolicy.KEEP_LAST,
             depth=10
         )
-        
+
         self.create_subscription(
             ROSImage,
             '/drone1/camera/color/image_raw',
             self.image_callback,
             qos_profile  # Use BEST_EFFORT
         )
-        
-        # Initialize drone controller
-        print("Connecting to drone...")
-        self.drone = DroneController()
-        
-        # Camera
-        self.bridge = CvBridge()
-        self.latest_image = None
+
+        # Subscribe to YOLO detections (published by separate yolo_tracker node)
+        self.latest_detections = []
         self.create_subscription(
-            ROSImage,
-            '/drone1/camera/color/image_raw',
-            self.image_callback,
+            String,
+            '/drone1/yolo_detections',
+            self.yolo_callback,
             10
         )
 
-        self.yolo_tracker = YOLOTracker()
-        
         print("✅ VLM Drone Controller ready!")
+
+    def yolo_callback(self, msg):
+        """Receive YOLO detections from yolo_tracker node"""
+        try:
+            data = json.loads(msg.data)
+            self.latest_detections = data.get('detections', [])
+        except Exception as e:
+            self.get_logger().warn(f"Failed to parse YOLO detections: {e}")
         
     def image_callback(self, msg):
         """Store latest camera frame"""
@@ -155,13 +164,25 @@ class VLMDroneController(Node):
                 'params': {},
                 'reasoning': "Cannot proceed without vision"
             }
-            
+
+        # Format YOLO detections for the prompt
+        detections_text = ""
+        if self.latest_detections:
+            detections_text = f"\n\nCURRENT YOLO DETECTIONS:\n"
+            detections_text += f"Total people detected: {len(self.latest_detections)}\n"
+            for det in self.latest_detections:
+                detections_text += f"- Person ID {det.get('track_id', 'unknown')}: "
+                detections_text += f"bbox={det.get('bbox', [])} "
+                detections_text += f"confidence={det.get('confidence', 0):.2f}\n"
+        else:
+            detections_text = "\n\nCURRENT YOLO DETECTIONS: No people detected\n"
+
         # Create prompt with system instructions
         messages = [{
             "role": "user",
             "content": [
                 {"type": "image", "image": self.latest_image},
-                {"type": "text", "text": f"{SYSTEM_PROMPT}\n\nUser Command: {user_command}"}
+                {"type": "text", "text": f"{SYSTEM_PROMPT}{detections_text}\nUser Command: {user_command}"}
             ]
         }]
         

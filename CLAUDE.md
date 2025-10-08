@@ -106,30 +106,44 @@ python3 drone_llm_client.py
 - ❌ Requires GUI environment (can't run on headless servers)
 - ❌ More resource intensive
 
-#### Mode 2: Headless Mode (Full Docker)
-**Use when**: Running on servers, CI/CD, long-duration tests, production-like environments
+#### Mode 2: Headless Mode (Full Docker) - **RECOMMENDED**
+**Use when**: Running on servers, development with camera feed, long-duration tests
 
 **What runs where**:
 - Everything in Docker containers
-- No GUI window
+- Isaac Sim runs headless
+- GUI accessible via WebRTC in browser
 
 **Launch**:
 ```bash
-# Start entire stack
+# Quick start (builds if needed, starts all services)
+./scripts/start_headless_mode.sh
+
+# OR manually:
+docker compose build isaac_sim  # First time only
 docker compose up -d
 
 # View logs
+docker compose logs -f isaac_sim
 docker compose logs -f vlm_controller
 ```
 
+**Access**:
+- 📺 **WebRTC GUI**: http://localhost:8211/streaming/webrtc-client/
+- 🦊 **Foxglove**: ws://localhost:8765
+- 🎛️ **ROSboard**: http://localhost:8888
+- 🤖 **VLM API**: http://localhost:8002
+
 **Advantages**:
 - ✅ Runs on headless servers
-- ✅ Easier to deploy
+- ✅ Camera feed works reliably (ROS2 topics publish correctly)
+- ✅ Visual feedback via WebRTC browser GUI
 - ✅ All dependencies containerized
+- ✅ Pegasus Simulator auto-installs on startup
 
 **Disadvantages**:
-- ❌ No visual feedback
-- ❌ Harder to debug drone movements
+- ❌ WebRTC has slight latency vs native GUI
+- ❌ Requires Docker + NVIDIA runtime
 
 ---
 

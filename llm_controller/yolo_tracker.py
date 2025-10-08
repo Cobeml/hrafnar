@@ -23,9 +23,9 @@ class YOLOTracker(Node):
         print("Loading YOLOv11-small...")
         self.model = YOLO('yolo11s.pt')  # Auto-downloads on first run
         
-        # QoS matching Isaac Sim
+        # QoS matching Isaac Sim camera (RELIABLE)
         qos_profile = QoSProfile(
-            reliability=ReliabilityPolicy.BEST_EFFORT,
+            reliability=ReliabilityPolicy.RELIABLE,
             history=HistoryPolicy.KEEP_LAST,
             depth=10
         )
@@ -66,8 +66,8 @@ class YOLOTracker(Node):
         )
 
         annotated = results[0].plot()
-        cv2.imshow('YOLO Detections', annotated)
-        cv2.waitKey(1)
+   
+   
         
         # Extract detections
         detections = []

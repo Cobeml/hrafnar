@@ -9,5 +9,31 @@ RUN apt-get update && apt-get install -y \
 # Set up ROS2 environment
 ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 ENV ROS_DOMAIN_ID=0
+ENV ROS_DISTRO=humble
+ENV AMENT_PREFIX_PATH=/isaac-sim/exts/isaacsim.ros2.bridge/humble
+
+# Create entrypoint script to install Pegasus on container start
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Install Pegasus Simulator extension if not already installed\n\
+if [ -d "/workspace/PegasusSimulator/extensions/pegasus.simulator" ]; then\n\
+    echo "Installing Pegasus Simulator extension..."\n\
+    cd /workspace/PegasusSimulator/extensions/pegasus.simulator\n\
+    /isaac-sim/python.sh -m pip install -e . --quiet\n\
+    echo "✅ Pegasus Simulator installed"\n\
+else\n\
+    echo "⚠️  Warning: PegasusSimulator not found at /workspace/PegasusSimulator"\n\
+    echo "   Make sure to mount it as a volume"\n\
+fi\n\
+\n\
+cd /workspace\n\
+\n\
+# Execute the command passed to the container\n\
+exec "$@"\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 WORKDIR /workspace
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/bin/bash"]
