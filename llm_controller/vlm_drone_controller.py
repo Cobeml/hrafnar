@@ -21,8 +21,11 @@ import json
 import re
 
 from drone_controller import DroneController
+from yolo_tracker import YOLOTracker
+import threading
 
-SYSTEM_PROMPT = """You are an autonomous drone with vision and movement capabilities.
+
+SYSTEM_PROMPT = """You are an autonomous emergency response drone searching for people who may need assistance.
 
 You have access to real-time YOLO detections showing:
 - Number of people detected
@@ -38,6 +41,7 @@ AVAILABLE TOOLS (these are the ONLY actions you can take):
 4. descend(distance: float) - Descend down in meters
 5. rotate(degrees: float) - Rotate in degrees (positive = clockwise, negative = counter-clockwise)
 6. land() - Land at current position (no parameters)
+7. speak(text: str) - Speak the given text 
 
 IMPORTANT RULES:
 - To move LEFT: use move_right with NEGATIVE distance (e.g., move_right(-2.0))
@@ -128,24 +132,16 @@ class VLMDroneController(Node):
             qos_profile  # Use BEST_EFFORT
         )
 
-        # Subscribe to YOLO detections (published by separate yolo_tracker node)
-        self.latest_detections = []
-        self.create_subscription(
-            String,
-            '/drone1/yolo_detections',
-            self.yolo_callback,
-            10
-        )
-
         print("✅ VLM Drone Controller ready!")
 
-    def yolo_callback(self, msg):
-        """Receive YOLO detections from yolo_tracker node"""
-        try:
-            data = json.loads(msg.data)
-            self.latest_detections = data.get('detections', [])
-        except Exception as e:
-            self.get_logger().warn(f"Failed to parse YOLO detections: {e}")
+        # Start YOLO tracker in same container
+        print("Starting YOLO tracker...")
+        self.yolo_tracker = YOLOTracker()
+
+    def speak(self, text):
+        """Drone speaks (simulated - prints for now)"""
+        print(f"\n🔊 DRONE: {text}\n")
+
         
     def image_callback(self, msg):
         """Store latest camera frame"""
@@ -167,10 +163,10 @@ class VLMDroneController(Node):
 
         # Format YOLO detections for the prompt
         detections_text = ""
-        if self.latest_detections:
+        if self.yolo_tracker.get_detections():
             detections_text = f"\n\nCURRENT YOLO DETECTIONS:\n"
-            detections_text += f"Total people detected: {len(self.latest_detections)}\n"
-            for det in self.latest_detections:
+            detections_text += f"Total people detected: {len(self.yolo_tracker.get_detections())}\n"
+            for det in self.yolo_tracker.get_detections():
                 detections_text += f"- Person ID {det.get('track_id', 'unknown')}: "
                 detections_text += f"bbox={det.get('bbox', [])} "
                 detections_text += f"confidence={det.get('confidence', 0):.2f}\n"
@@ -307,6 +303,10 @@ class VLMDroneController(Node):
         elif action == 'land':
             self.drone.land()
             return "Landed successfully"
+        elif action == 'speak':
+            text = params.get('text', 'Hello')
+            self.speak(text)
+            return f"Spoke: {text}"
         else:
             return f"Unknown action: {action}. Available: move_forward, move_right, climb, descend, rotate, land"
 

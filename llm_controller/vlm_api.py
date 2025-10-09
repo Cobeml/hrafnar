@@ -117,7 +117,12 @@ async def startup():
         global controller
         rclpy.init()
         controller = VLMDroneController()
-        rclpy.spin(controller)
+        
+        # Spin both VLM and YOLO together
+        executor = rclpy.executors.MultiThreadedExecutor()
+        executor.add_node(controller)
+        executor.add_node(controller.yolo_tracker)
+        executor.spin()
     
     threading.Thread(target=init_ros, daemon=True).start()
     

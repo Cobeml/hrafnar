@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt-get update && apt-get remove -y python3-sympy && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
+RUN pip3 install "numpy<2.0"
+
 RUN pip3 install --upgrade pip
 
 # Upgrade Pillow FIRST
@@ -37,6 +39,8 @@ RUN pip3 install pymavlink
 
 # Install YOLOv11-small
 RUN pip3 install ultralytics
+
+RUN pip3 install --force-reinstall "numpy<2.0"
 
 WORKDIR /app
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc

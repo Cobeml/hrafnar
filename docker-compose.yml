@@ -65,32 +65,6 @@ services:
     restart: unless-stopped
     depends_on:
       - ros2_bridge
-      
-  yolo_tracker:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.vlm
-    image: hrafnar-vlm-controller:latest
-    container_name: hrafnar_yolo_tracker
-    network_mode: host
-    environment:
-      - ROS_DOMAIN_ID=0
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - CUDA_VISIBLE_DEVICES=0
-      - PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:/app
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-    runtime: nvidia
-    volumes:
-      - ./llm_controller:/app/llm_controller
-      - ~/.cache/huggingface:/root/.cache/huggingface
-      - /dev/shm:/dev/shm
-    stdin_open: true
-    tty: true
-    command: bash -c "source /opt/ros/humble/setup.bash && python3 /app/llm_controller/yolo_tracker.py"
-    restart: unless-stopped
-    depends_on:
-      - ros2_bridge
 
   vlm_controller:
     build:
@@ -99,24 +73,25 @@ services:
     image: hrafnar-vlm-controller:latest
     container_name: hrafnar_vlm_controller
     network_mode: host
-    runtime: nvidia  # Add this!
+    runtime: nvidia
     environment:
       - ROS_DOMAIN_ID=0
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:/app
       - HF_HOME=/root/.cache/huggingface
-      - NVIDIA_VISIBLE_DEVICES=all  # Add this!
-      - NVIDIA_DRIVER_CAPABILITIES=all  # Add this!
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - DISPLAY=${DISPLAY}
     volumes:
       - ./llm_controller:/app/llm_controller
       - ./drone_controller.py:/app/drone_controller.py
       - ~/.cache/huggingface:/root/.cache/huggingface
       - /dev/shm:/dev/shm
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
     stdin_open: true
     tty: true
     command: bash -c "source /opt/ros/humble/setup.bash && python3 /app/llm_controller/vlm_api.py"
     depends_on:
       - ros2_bridge
-
 

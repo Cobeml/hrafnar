@@ -45,6 +45,12 @@ class YOLOTracker(Node):
             '/drone1/yolo_detections',
             10
         )
+
+        self.annotated_pub = self.create_publisher(
+            Image, 
+            '/drone1/yolo_annotated', 
+            10
+        )
         
         # Store latest detections (for VLM to read)
         self.latest_detections = []
@@ -66,9 +72,11 @@ class YOLOTracker(Node):
         )
 
         annotated = results[0].plot()
-   
-   
-        
+
+        annotated_msg = self.bridge.cv2_to_imgmsg(annotated, encoding='rgb8')
+        annotated_msg.header.frame_id = 'camera'
+        self.annotated_pub.publish(annotated_msg)
+
         # Extract detections
         detections = []
         if results[0].boxes is not None:
