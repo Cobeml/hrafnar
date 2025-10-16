@@ -102,7 +102,9 @@ class YOLOTracker(Node):
                     'class': 'person'
                 }
                 detections.append(detection)
-        
+
+        # print(f"🔍 DEBUG: Got {len(detections)} detections")  # Commented out to reduce log spam
+
         # Store and publish
         self.latest_detections = detections
         

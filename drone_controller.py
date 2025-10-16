@@ -22,7 +22,7 @@ class DroneController:
 
         # Current state
         self.current_pos = [0, 0, 0]  # x, y, z in NED frame
-        self.current_yaw = 0
+        self.current_yaw = 0  # Current yaw in radians (from ATTITUDE)
         self.armed = False
         self.offboard_mode = False
 
@@ -75,11 +75,15 @@ class DroneController:
         print("✅ Battery failsafe disabled (simulation mode)")
 
     def _listen_position(self):
-        """Listen for position updates from PX4"""
+        """Listen for position and attitude updates from PX4"""
         while True:
-            msg = self.master.recv_match(type='LOCAL_POSITION_NED', blocking=True, timeout=1)
+            # Listen for both position and attitude messages
+            msg = self.master.recv_match(type=['LOCAL_POSITION_NED', 'ATTITUDE'], blocking=True, timeout=1)
             if msg:
-                self.current_pos = [msg.x, msg.y, msg.z]
+                if msg.get_type() == 'LOCAL_POSITION_NED':
+                    self.current_pos = [msg.x, msg.y, msg.z]
+                elif msg.get_type() == 'ATTITUDE':
+                    self.current_yaw = msg.yaw  # Yaw in radians
                 
     def _stream_setpoints(self):
         """Continuously stream setpoints to PX4 (required for OFFBOARD)"""
@@ -115,11 +119,33 @@ class DroneController:
         """Get current position"""
         return {
             'x': self.current_pos[0],
-            'y': self.current_pos[1], 
+            'y': self.current_pos[1],
             'z': self.current_pos[2],
             'altitude': -self.current_pos[2]  # Convert NED to altitude
         }
-        
+
+    def _body_to_ned(self, forward, right):
+        """
+        Transform body-frame movement to NED frame using current yaw
+
+        Args:
+            forward: Distance to move forward (positive) or backward (negative) in body frame
+            right: Distance to move right (positive) or left (negative) in body frame
+
+        Returns:
+            (delta_x, delta_y): NED frame offsets
+        """
+        # Rotation matrix from body frame to NED frame
+        # NED_x = forward * cos(yaw) - right * sin(yaw)
+        # NED_y = forward * sin(yaw) + right * cos(yaw)
+        cos_yaw = math.cos(self.current_yaw)
+        sin_yaw = math.sin(self.current_yaw)
+
+        delta_x = forward * cos_yaw - right * sin_yaw
+        delta_y = forward * sin_yaw + right * cos_yaw
+
+        return delta_x, delta_y
+
     def arm(self):
         """Arm the drone"""
         self.master.mav.command_long_send(
@@ -201,17 +227,33 @@ class DroneController:
         print(f"📍 Final: ({pos['x']:.2f}, {pos['y']:.2f}, altitude={pos['altitude']:.2f}m)")
         
     def move_forward(self, distance=2.0):
-        """Move forward (positive X in body frame)"""
-        print(f"➡️  Moving forward {distance}m...")
-        target_x = self.current_pos[0] + distance
-        self.goto_position(target_x, self.current_pos[1], self.current_pos[2])
+        """Move forward in camera direction (body frame)"""
+        print(f"➡️  Moving forward {distance}m (camera-relative)...")
+        # Transform body-frame movement to NED
+        delta_x, delta_y = self._body_to_ned(forward=distance, right=0)
+        target_x = self.current_pos[0] + delta_x
+        target_y = self.current_pos[1] + delta_y
+        self.goto_position(target_x, target_y, self.current_pos[2])
         
     def move_right(self, distance=2.0):
-        """Move right (positive Y in NED)"""
-        print(f"➡️  Moving right {distance}m...")
-        target_y = self.current_pos[1] + distance
-        self.goto_position(self.current_pos[0], target_y, self.current_pos[2])
-        
+        """Move right relative to camera direction (body frame)"""
+        print(f"➡️  Moving right {distance}m (camera-relative)...")
+        # Transform body-frame movement to NED
+        delta_x, delta_y = self._body_to_ned(forward=0, right=distance)
+        target_x = self.current_pos[0] + delta_x
+        target_y = self.current_pos[1] + delta_y
+        self.goto_position(target_x, target_y, self.current_pos[2])
+
+    def move_backward(self, distance=2.0):
+        """Move backward (opposite of camera direction)"""
+        print(f"⬅️  Moving backward {distance}m...")
+        self.move_forward(-distance)
+
+    def move_left(self, distance=2.0):
+        """Move left (opposite of camera's right)"""
+        print(f"⬅️  Moving left {distance}m...")
+        self.move_right(-distance)
+
     def climb(self, altitude_change=0.5):
         """Climb up (more negative Z)"""
         print(f"⬆️  Climbing {altitude_change}m...")

@@ -45,6 +45,15 @@ enable_extension("omni.kit.livestream.webrtc")  # For web-based GUI
 # Update the simulation app with the new extensions
 simulation_app.update()
 
+settings = carb.settings.get_settings()
+settings.set("/rtx/rendermode", "RaytracedLighting")  # Better lighting quality
+settings.set("/rtx/translucency/enabled", True)
+settings.set("/rtx/indirectDiffuse/enabled", True)
+# Enable direct lighting for better camera visibility in headless mode
+settings.set("/rtx/directLighting/enabled", True)
+settings.set("/rtx/directLighting/sampledLighting/samplesPerPixel", 8)  # Increased from 4 to 8 for better quality
+settings.set("/rtx/ambientOcclusion/enabled", True)  # Better depth perception
+
 # -------------------------------------------------------------------------------------------------
 # These lines are needed to restart the USD stage and make sure that the people extension is loaded
 # -------------------------------------------------------------------------------------------------
@@ -119,18 +128,27 @@ class PegasusApp:
         #self.pg.load_environment(SIMULATION_ENVIRONMENTS["Curved Gridroom"])
         self.pg.load_asset(SIMULATION_ENVIRONMENTS["Curved Gridroom"], "/World/layout")
 
+        # Add Dome Light for better scene illumination (simulates sky/ambient light)
+        from pxr import UsdLux, Sdf
+        stage = omni.usd.get_context().get_stage()
+        dome_light_path = Sdf.Path("/World/DomeLight")
+        dome_light = UsdLux.DomeLight.Define(stage, dome_light_path)
+        dome_light.CreateIntensityAttr(2000.0)  # High intensity for visibility in headless mode
+        print("✅ Added Dome Light for scene illumination")
+
         # Check the available assets for people
         people_assets_list = Person.get_character_asset_list()
         for person in people_assets_list:
             print(person)
 
-        # Create the controller to make on person walk around in circles
-        person_controller = CirclePersonController()
-        p1 = Person("person1", "original_male_adult_construction_05", init_pos=[3.0, 0.0, 0.0], init_yaw=1.0, controller=person_controller)
-        
-        # Create a person without setting up a controller, and just setting a manual target position for it to track
-        p2 = Person("person2", "original_female_adult_business_02", init_pos=[2.0, 0.0, 0.0])
-        p2.update_target_position([10.0, 0.0, 0.0], 1.0)
+        # Create two stationary people at 10m from center in different directions
+        # Person1: East direction (10m from origin)
+        p1 = Person("person1", "original_male_adult_construction_05", init_pos=[10.0, 0.0, 0.0], init_yaw=1.0)
+        p1.update_target_position([10.0, 0.0, 0.0], 1.0)  # Stay in place
+
+        # Person2: North direction (10m from origin)
+        p2 = Person("person2", "original_female_adult_business_02", init_pos=[0.0, 10.0, 0.0])
+        p2.update_target_position([0.0, 10.0, 0.0], 1.0)  # Stay in place
 
         config_multirotor = MultirotorConfig()
         # Create the multirotor configuration
@@ -186,58 +204,8 @@ class PegasusApp:
         # Reset the simulation environment so that all articulations (aka robots) are initialized
         self.world.reset()
 
-        # Setup dual viewport layout (main view + drone camera)
-        self._setup_viewports()
-
         # Auxiliar variable for the timeline callback example
         self.stop_sim = False
-
-    def _setup_viewports(self):
-        """Setup minimal UI with 2 viewports: main camera and drone camera feed"""
-        import omni.ui as ui
-        from omni.kit.viewport.utility import get_active_viewport_window, create_viewport_window
-
-        # Close unnecessary windows
-        windows_to_close = [
-            "Stage",
-            "Layer",
-            "Content",
-            "Render Settings",
-            "Property",
-            "Semantics Schema Editor",
-            "Extensions"
-        ]
-
-        for window_name in windows_to_close:
-            try:
-                window = ui.Workspace.get_window(window_name)
-                if window:
-                    window.visible = False
-            except:
-                pass
-
-        # Create drone camera viewport
-        try:
-            # Create second viewport for drone camera
-            drone_viewport = create_viewport_window("Drone Camera")
-
-            # Set the drone camera as active camera for this viewport
-            # The camera path is: /World/quadrotor/camera
-            import omni.kit.viewport.utility as vp_util
-            drone_viewport.viewport_api.set_active_camera("/World/quadrotor/camera")
-
-            # Position viewports side by side using QuickLayout
-            from omni.kit.quicklayout import QuickLayout
-            QuickLayout.set_layout({
-                "Viewport": {"dock_id": "left", "width": 0.5},
-                "Drone Camera": {"dock_id": "right", "width": 0.5},
-                "Console": {"dock_id": "bottom", "height": 0.2}
-            })
-
-            print("✅ Dual viewport setup complete: Main view + Drone camera")
-        except Exception as e:
-            print(f"⚠️  Could not setup dual viewport layout: {e}")
-            print("   Using default single viewport")
 
     def run(self):
         """

@@ -16,37 +16,62 @@ The project simulates autonomous military drones that can operate with minimal g
 ## Architecture
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Isaac Sim +    │────▶│   ROS2 Bridge    │────▶│  VLM Controller │
-│  PX4 SITL       │     │  (ROS2 Humble)   │     │  (Qwen2.5-VL)   │
-│  (Simulation)   │◀────│                  │◀────│                 │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-         │                      │                         │
-         │                      │                         │
-         ▼                      ▼                         ▼
-   MAVLink UDP           ROS2 Topics              FastAPI (8002)
-    (14540)         (/drone1/camera, etc.)             │
-                                                        ▼
-                                                ┌──────────────┐
-                                                │ MacBook      │
-                                                │ Client       │
-                                                │ (Any Lang)   │
-                                                └──────────────┘
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────┐
+│  Isaac Sim +    │────▶│   ROS2 Bridge    │────▶│  Mission Controller │
+│  PX4 SITL       │     │  (ROS2 Humble)   │     │  (Orchestration)    │
+│  (Simulation)   │◀────│                  │◀────│                     │
+└─────────────────┘     └──────────────────┘     └──────────┬──────────┘
+         │                      │                           │
+         │                      │                           │
+         ▼                      ▼                           ▼
+   MAVLink UDP           ROS2 Topics              ┌──────────────────┐
+    (14540)         (/drone1/camera, etc.)       │  VLM Controller  │
+                            │                     │  (Qwen2.5-VL)   │
+                            │                     └────────┬─────────┘
+                            │                              │
+                            ▼                              │
+                    ┌───────────────┐                     │
+                    │ YOLO Tracker  │                     │
+                    │ (YOLOv11)     │                     │
+                    └───────┬───────┘                     │
+                            │                              │
+                            ▼                              ▼
+                    /drone1/yolo_detections      /drone1/vlm_response
+                            │                              │
+                            └──────────┬───────────────────┘
+                                       │
+                                       ▼
+                                ┌──────────────┐
+                                │  FastAPI     │
+                                │  (8002)      │
+                                │              │
+                                │ MacBook      │
+                                │ Client       │
+                                └──────────────┘
 ```
 
 ## Key Components
 
 ### 1. Drone Controller (`drone_controller.py`)
 - Low-level MAVLink interface to PX4 autopilot
-- Provides high-level movement primitives: `move_forward()`, `move_right()`, `climb()`, `descend()`, `rotate()`, `land()`
-- Uses NED (North-East-Down) coordinate frame where Z is negative for altitude
+- Provides high-level movement primitives: `move_forward()`, `move_right()`, `move_backward()`, `move_left()`, `climb()`, `descend()`, `rotate()`, `land()`
+- **Movements are camera-relative (body-frame)**: `move_forward()` moves in the direction the camera faces
+- Internally uses NED (North-East-Down) coordinate frame where Z is negative for altitude
+- Tracks current yaw from ATTITUDE messages and transforms body-frame commands to NED
 - Maintains continuous setpoint streaming required for PX4 OFFBOARD mode
 
 ### 2. VLM Controller (`llm_controller/vlm_drone_controller.py`)
 - ROS2 node that subscribes to `/drone1/camera/color/image_raw`
 - Uses Qwen2.5-VL-3B (4-bit quantized) for vision-language processing
 - Interprets natural language commands with camera context
-- Structured prompt engineering with tool-calling format (OBSERVATION/ACTION/PARAMS/REASONING)
+- **Visual Grounding (Oct 2025)**: Annotates camera images with YOLO bounding boxes before VLM processing
+  - Colored boxes labeled with ID, position (LEFT/CENTER/RIGHT), and confidence
+  - Improves spatial reasoning by visually aligning detections with camera view
+- Structured prompt engineering with tool-calling format:
+  - VISUAL_CHECK: Verify bounding boxes in image
+  - YOLO_CHECK: Cross-reference with YOLO text
+  - GROUNDING: Confirm visual-text alignment
+  - THINKING/OBSERVATION/ACTION/PARAMS/REASONING
 - Executes actions via `DroneController`
 
 ### 3. VLM API Server (`llm_controller/vlm_api.py`)
@@ -67,6 +92,58 @@ The project simulates autonomous military drones that can operate with minimal g
 - Auto-detects input language and translates to English via DeepL
 - Translates drone responses back to user's language
 - Requires `DEEPL_API_KEY` in `.env` file
+
+### 6. YOLO Tracker (`llm_controller/yolo_tracker.py`)
+- ROS2 node using YOLOv11-small for real-time person detection
+- Subscribes to `/drone1/camera/color/image_raw`
+- Publishes detections to `/drone1/yolo_detections` as JSON
+- Publishes annotated frames to `/drone1/yolo_annotated`
+- Maintains persistent track IDs across frames for tracking
+- Filters for person class (COCO class 0) only
+
+### 7. Mission Controller (`llm_controller/mission_controller.py`)
+- High-level event-driven orchestration for autonomous missions
+- Integrates VLM + YOLO + DroneController for search-and-survey operations
+- Event types: person detection, person lost, bbox changes, movement complete, timeouts
+- **ReAct Framework (Oct 2025)**: Reflection loop after action execution
+  - Observe → Act → Reflect → Follow-up
+  - Verifies if actions achieved intended goals
+  - Suggests corrective follow-up actions based on outcomes
+- Maintains encounter history via `MissionDatabase`
+- Configurable mission parameters: search altitude, approach distance, timeouts
+- Supports interactive speech input during flight (simulated via console)
+
+### 8. Mission Database (`llm_controller/mission_database.py`)
+- SQLite database for tracking person encounters during missions
+- Records: track_id, first_seen, last_seen, approached status, conversation logs
+- Enables persistent mission state across drone runs
+- Useful for multi-session reconnaissance missions
+
+## Recent Improvements (October 2025)
+
+### Phase 1: Visual Grounding + ReAct Reflection
+
+Implemented research-backed improvements to address spatial reasoning and memory issues:
+
+1. **Visual Bounding Box Overlays**: Camera images are annotated with colored YOLO bboxes before VLM processing
+2. **Grounding Verification**: VLM explicitly cross-references visual boxes with text descriptions
+3. **ReAct Reflection Loop**: After each action, VLM reflects on outcome and suggests follow-ups
+
+**Expected Impact**: +30-50% improvement in spatial reasoning and person tracking
+
+See `IMPROVEMENTS.md` for detailed documentation, testing instructions, and research references.
+
+**Key Files Modified**:
+- `llm_controller/vlm_drone_controller.py`: Visual annotation + grounding prompt
+- `llm_controller/mission_controller.py`: Reflection loop integration
+
+**Testing**:
+```bash
+docker compose build vlm_controller  # Rebuild after changes
+docker compose up -d
+docker compose logs -f vlm_controller  # Look for 🔄 Reflecting on action
+docker exec -it hrafnar-vlm_controller-1 python3 /app/llm_controller/mission_controller.py
+```
 
 ## Development Commands
 
@@ -215,6 +292,15 @@ python3 drone_controller.py
 # VLM control with camera
 python3 llm_controller/vlm_drone_controller.py
 
+# YOLO person tracker (standalone)
+python3 llm_controller/yolo_tracker.py
+
+# Autonomous mission with VLM + YOLO
+python3 llm_controller/mission_controller.py
+
+# Test autonomous mission scenarios
+python3 llm_controller/test_autonomous_mission.py
+
 # Start API server
 python3 llm_controller/vlm_api.py
 
@@ -235,20 +321,30 @@ ros2 topic list
 # Echo camera feed
 ros2 topic echo /drone1/camera/color/image_raw
 
+# Echo YOLO detections
+ros2 topic echo /drone1/yolo_detections
+
 # Check topic QoS
 ros2 topic info /drone1/camera/color/image_raw -v
+
+# View annotated YOLO output (requires visualization)
+ros2 run rqt_image_view rqt_image_view /drone1/yolo_annotated
 ```
 
 ## Important Technical Details
 
 ### Coordinate Systems
-- **NED (North-East-Down)**: PX4/MAVLink use NED where:
-  - X = forward (north)
-  - Y = right (east)
-  - Z = down (negative altitude)
-- Example: `z=-1.5` means 1.5m above ground
-- To move left: `move_right(-2.0)` (negative distance)
-- To move backward: `move_forward(-2.0)`
+- **Body Frame (Camera-Relative)**: All movement commands are relative to the drone's orientation
+  - `move_forward()` = move in the direction the camera faces
+  - `move_right()` = move to the camera's right side
+  - `move_backward()` = move opposite to camera direction
+  - `move_left()` = move to the camera's left side
+  - After rotating, movements automatically follow the new camera direction
+- **NED (North-East-Down)**: Internal coordinate system used by PX4/MAVLink
+  - X = north, Y = east, Z = down (negative altitude)
+  - Body-frame movements are transformed to NED using current yaw
+  - Example: `z=-1.5` means 1.5m above ground
+- **Backward compatibility**: Negative distances still work (e.g., `move_forward(-2.0)` = backward)
 
 ### ROS2 QoS Profiles
 Isaac Sim publishes with `BEST_EFFORT` reliability. All ROS2 subscribers MUST use:
@@ -264,14 +360,40 @@ qos_profile = QoSProfile(
 Using `RELIABLE` will cause subscription failures.
 
 ### VLM Prompt Format
-The VLM expects structured outputs:
+The VLM expects structured outputs with visual grounding (updated Oct 2025):
 ```
+VISUAL_CHECK: <bounding boxes visible in image: ID, position, color>
+YOLO_CHECK: <YOLO text descriptions>
+GROUNDING: <verification that visual and text align>
+THINKING: <step-by-step spatial reasoning>
 OBSERVATION: <what the camera sees>
 ACTION: <move_forward|move_right|climb|descend|rotate|land>
 PARAMS: {"distance": 2.0} or {"degrees": 90}
 REASONING: <why this action>
 ```
-See `SYSTEM_PROMPT` in `vlm_drone_controller.py` for full template.
+See `SYSTEM_PROMPT` in `vlm_drone_controller.py` for full template with examples.
+
+### YOLO Detection Format
+Published to `/drone1/yolo_detections` as JSON:
+```json
+{
+  "detections": [
+    {
+      "id": 1,
+      "bbox": [x1, y1, x2, y2],
+      "center": [cx, cy],
+      "confidence": 0.87,
+      "area": 12500
+    }
+  ],
+  "count": 1,
+  "timestamp": 1696234567.89
+}
+```
+- `id`: Persistent track ID maintained across frames (YOLOv11 tracking)
+- `bbox`: Bounding box in pixel coordinates
+- `center`: Center point for targeting
+- `area`: Used to determine if person is approaching/receding
 
 ### MAVLink Connection
 - Default: `udp:127.0.0.1:14540`
@@ -318,11 +440,30 @@ deepl_api_key=...              # Required for macbook_client.py translation
 
 ## Common Workflows
 
+### Running an Autonomous Mission
+1. Start headless mode: `./scripts/start_headless_mode.sh`
+2. Wait for Isaac Sim + ROS2 bridge to initialize (~60s)
+3. In separate terminal: `python3 llm_controller/mission_controller.py`
+4. Mission will:
+   - Takeoff to search altitude
+   - Use YOLO to detect people in camera feed
+   - Approach detected persons
+   - Use VLM to analyze scene and engage in conversation
+   - Track encounters in SQLite database
+   - Continue search pattern until mission timeout
+
 ### Adding New Drone Actions
 1. Add method to `DroneController` class in `drone_controller.py`
 2. Update `SYSTEM_PROMPT` in `vlm_drone_controller.py` with new tool
 3. Add case in `execute_action()` method
 4. Update response parser if needed
+
+### Adding New Mission Behaviors
+1. Define new `EventType` in `mission_controller.py`
+2. Add event detection logic in `_detect_events()`
+3. Implement handler method (e.g., `_handle_new_behavior()`)
+4. Add case in `_event_loop()` switch statement
+5. Update `MissionConfig` if new parameters are needed
 
 ### Testing Without Isaac Sim
 The system requires Isaac Sim running for:
@@ -337,12 +478,62 @@ For testing VLM parsing without simulation, use the fallback parser in `vlm_api.
 3. Echo raw messages: `ros2 topic echo <topic>`
 4. Check for topic name mismatches (e.g., `/drone1/` prefix)
 
-### Model Download
-First run downloads Qwen2.5-VL-3B-Instruct (~7GB) to `~/.cache/huggingface/`. This is mounted in Docker via:
+### Model Downloads
+First run downloads models to `~/.cache/huggingface/`. This is mounted in Docker via:
 ```yaml
 volumes:
   - ~/.cache/huggingface:/root/.cache/huggingface
 ```
+
+**Downloaded models**:
+- Qwen2.5-VL-3B-Instruct (~7GB) - Vision-Language Model
+- yolo11s.pt (~10MB) - YOLOv11 small variant for person detection
+
+### Simulation Scene Configuration
+The `9_people.py` script configures Isaac Sim with:
+- **Scene**: "Curved Gridroom" environment from Pegasus Simulator
+- **People**: Multiple animated characters (construction worker, business person, etc.)
+- **Person controllers**: Characters can move in patterns (circles) or to fixed waypoints
+- **Drone**: Single Iris quadcopter with PX4 autopilot
+- **Sensors**: RGB camera mounted on drone (640x480 default)
+- **WebRTC**: Enabled for browser-based GUI access in headless mode
+- **ROS2**: Publishes camera, pose, twist, GPS to ROS2 topics
+
+To modify the scene:
+1. Edit `9_people.py` to change environment, add/remove people, adjust spawn positions
+2. Restart Isaac Sim container: `docker compose restart isaac_sim`
+
+## Data Flow and Decision Loop
+
+### Autonomous Mission Flow (mission_controller.py)
+```
+1. Takeoff → Search altitude
+2. Begin search pattern (grid/spiral)
+3. YOLO detects person in camera feed
+4. Event: NEW_PERSON_DETECTED
+   → Approach person (move toward bbox center)
+5. Event: BBOX_CHANGED_SIGNIFICANTLY
+   → Adjust position to maintain view
+6. Event: MOVEMENT_COMPLETE
+   → VLM analyzes scene
+   → VLM generates conversation/question
+   → User provides speech input (console simulation)
+   → VLM processes response
+7. Event: CONVERSATION_COMPLETE
+   → Log encounter to database
+   → Mark person as "approached"
+   → Resume search pattern
+8. Repeat until mission timeout or manual stop
+```
+
+### Event-Driven Architecture
+The `MissionController` monitors multiple event sources:
+- **YOLO tracker**: New detections, lost tracks, bbox changes
+- **Drone state**: Movement completion, position updates
+- **User input**: Speech/text commands during flight
+- **Timers**: No detection timeout, mission duration timeout
+
+This event-driven model enables reactive behaviors without blocking the main loop.
 
 ## Strategic Context
 
@@ -368,6 +559,8 @@ Target scenarios include amphibious defense, reconnaissance, swarm coordination,
 - fastapi, uvicorn (API servers)
 - rclpy (ROS2 Python bindings, installed via Docker)
 - qwen-vl-utils, bitsandbytes (quantization)
+- ultralytics (YOLOv11 for person detection)
+- cv_bridge (ROS2 image conversion)
 - python-dotenv, pyyaml (config)
 
 ## Network Configuration

@@ -9,10 +9,12 @@ from rclpy.node import Node
 import time
 import threading
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 import math
 import queue
+import numpy as np
+import io
 
 from vlm_drone_controller import VLMDroneController
 from mission_database import MissionDatabase
@@ -33,17 +35,27 @@ class MissionConfig:
     search_altitude: float = 2.0  # meters
     approach_distance: float = 1.5  # meters from person
     bbox_change_threshold: int = 50  # pixels
-    no_detection_timeout: int = 60  # seconds
+    no_detection_timeout: int = 15  # seconds
     search_pattern: str = "grid"  # or "spiral"
 
 @dataclass
 class PersonEncounter:
-    """Track encounters with people"""
+    """Track encounters with people - includes visual memory for re-identification"""
     track_id: int
     first_seen: float
     last_bbox: List[int]
+    description: str = ""  # VLM description of the person (appearance, clothing, etc.)
+    location: tuple = (0.0, 0.0, 0.0)  # Last known drone position when seeing this person
     approached: bool = False
     conversation_complete: bool = False
+
+    # Memory-based recognition fields (Phase B)
+    name: str = ""  # Person's name (collected via conversation)
+    detailed_info: str = ""  # Additional information about the person
+    image_data: Optional[bytes] = None  # PNG snapshot for visual matching
+    embedding: Optional[np.ndarray] = field(default=None, repr=False)  # CLIP embedding [512]
+    conversation_state: str = "not_started"  # Conversation state machine
+    embedding_similarity: float = 0.0  # Similarity score if matched via visual recognition
     
 class MissionController(Node):
     def __init__(self, config: MissionConfig):
@@ -60,7 +72,10 @@ class MissionController(Node):
         # Track encountered people
         self.encounters: Dict[int, PersonEncounter] = {}
         self.current_target: Optional[int] = None
-        
+
+        # Track action history to detect repetitions
+        self.action_history: List[str] = []  # Track last 4 actions
+
         # Timing for event triggers
         self.last_detection_time = time.time()
         self.last_movement_time = time.time()
@@ -73,9 +88,91 @@ class MissionController(Node):
         self.input_thread.start()
 
         self.db = MissionDatabase()
-        
+
         print("✅ Mission Controller ready!")
-        
+
+    def _reflect_on_action(self, action_taken: str, intended_goal: str) -> dict:
+        """
+        ReAct Framework: Reflection step after action execution
+        Verifies if the action achieved its goal and informs next decision
+        """
+        # Wait for action to complete and camera to update
+        time.sleep(0.5)
+
+        # Spin to get fresh camera frame and detections
+        for _ in range(5):
+            rclpy.spin_once(self.vlm, timeout_sec=0.1)
+            rclpy.spin_once(self.vlm.yolo_tracker, timeout_sec=0.1)
+            time.sleep(0.1)
+
+        # Ask VLM to reflect on the action
+        current_pos = self.vlm.drone.get_position()
+        reflection_prompt = f"""REFLECTION AFTER ACTION:
+I just executed: {action_taken}
+My goal was: {intended_goal}
+Current altitude: {current_pos['altitude']:.1f}m
+
+Please analyze:
+1. Did my action achieve the goal? (Compare before/after using visual bounding boxes)
+2. What changed in the scene? (person position, visibility, etc.)
+3. What should I do next to continue toward my mission objective?
+"""
+
+        print(f"\n🔄 Reflecting on action: {action_taken}")
+        reflection = self.vlm.process_command(reflection_prompt)
+
+        if 'observation' in reflection:
+            print(f"💭 Reflection: {reflection['observation'][:150]}...")
+
+        return reflection
+
+    def _validate_and_clamp_movement(self, decision: dict, max_distance: float = 5.0) -> dict:
+        """Validate and clamp movement distances to prevent absurd movements"""
+        movement_actions = ['move_forward', 'move_backward', 'move_right', 'move_left']
+
+        if decision.get('action') in movement_actions:
+            distance = decision.get('params', {}).get('distance', 0)
+            if abs(distance) > max_distance:
+                original = distance
+                clamped = max_distance if distance > 0 else -max_distance
+                decision['params']['distance'] = clamped
+                print(f"⚠️  Clamped unreasonable movement: {original:.1f}m → {clamped:.1f}m")
+
+        # Check for illogical lateral movement when person is centered
+        if decision.get('action') in ['move_left', 'move_right']:
+            obs = decision.get('observation', '').lower()
+            thinking = decision.get('thinking', '').lower()
+            combined = obs + ' ' + thinking
+
+            if any(phrase in combined for phrase in ['center', 'centered', 'closer to center', 'middle']):
+                print(f"⚠️  WARNING: Person appears CENTERED but VLM chose lateral movement ({decision.get('action')})")
+                print(f"    Observation: {obs[:100]}")
+                print(f"    Suggestion: Should use move_forward to approach centered person")
+                # Don't override - let VLM learn from feedback, but warn operator
+
+        # Track action history and detect repetitions
+        action = decision.get('action')
+        if action:
+            self.action_history.append(action)
+            # Keep only last 4 actions
+            if len(self.action_history) > 4:
+                self.action_history.pop(0)
+
+            # Detect if last 3 actions are identical
+            if len(self.action_history) >= 3:
+                if len(set(self.action_history[-3:])) == 1:
+                    print(f"🔄 REPETITION DETECTED: Last 3 actions were all '{action}'")
+                    print(f"    Forcing different action to break loop...")
+                    # Force a rotate action to break the loop
+                    decision = {
+                        'action': 'rotate',
+                        'params': {'degrees': 45},
+                        'reasoning': 'Breaking repetition loop by rotating to find new perspective'
+                    }
+                    self.action_history.append('rotate')  # Update history with forced action
+
+        return decision
+
     def start_mission(self):
         """Begin autonomous emergency response mission"""
         print("\n" + "="*60)
@@ -100,6 +197,7 @@ class MissionController(Node):
         """Main event-driven decision loop"""
         while self.mission_active:
             rclpy.spin_once(self.vlm, timeout_sec=0.1)
+            rclpy.spin_once(self.vlm.yolo_tracker, timeout_sec=0.1)  
             
             # Check for events
             event = self._detect_event()
@@ -128,6 +226,7 @@ class MissionController(Node):
     def _detect_event(self) -> Optional[EventType]:
         """Monitor for events and return first detected"""
         detections = self.vlm.yolo_tracker.get_detections()
+        # print(f"🔍 DEBUG: Got {len(detections)} detections")  # Commented out to reduce log spam
         current_time = time.time()
         
         # Event 1: New person detected
@@ -198,50 +297,129 @@ class MissionController(Node):
         """Handle new person detection"""
         # Find the newest person
         newest = max(self.encounters.values(), key=lambda e: e.first_seen)
-        
+
         if not newest.approached:
             print(f"👤 New person detected (ID {newest.track_id})")
-            
-            # Ask VLM for decision
+
+            # Check if this might be a previously seen person (YOLO ID changed)
+            context = ""
+            current_pos = self.vlm.drone.get_position()
+            for prev_id, prev_enc in list(self.encounters.items()):
+                if prev_enc.description and prev_id != newest.track_id:
+                    # Calculate distance from previous encounter location
+                    dist = ((current_pos['x'] - prev_enc.location[0])**2 +
+                            (current_pos['y'] - prev_enc.location[1])**2)**0.5
+                    if dist < 5.0:  # Within 5 meters of previous encounter
+                        context = f"\n\nNOTE: Previously at this location, I saw: {prev_enc.description}. This might be the same person."
+                        break
+
+            # Ask VLM to describe and decide (with altitude context)
             decision = self.vlm.process_command(
-                f"I detect a new person (ID {newest.track_id}). Should I approach them?"
+                f"At {current_pos['altitude']:.1f}m altitude, I detect a person (YOLO ID {newest.track_id}). Please describe what they look like (clothing, appearance) and decide if you should approach them.{context}"
             )
-            
+
+            # Store VLM's description from observation
+            if 'observation' in decision:
+                newest.description = decision['observation']
+                newest.location = (current_pos['x'], current_pos['y'], current_pos['altitude'])
+                print(f"📝 Stored description: {newest.description[:80]}...")
+
+            # Validate and clamp movement distances
+            decision = self._validate_and_clamp_movement(decision)
+
             if decision['action'] and decision['action'] != 'land':
                 self.current_target = newest.track_id
+                action_str = f"{decision['action']}({decision.get('params', {})})"
+                intended_goal = f"Approach person ID {newest.track_id}"
+
+                # Execute action
                 result = self.vlm.execute_action(decision)
                 print(f"✅ {result}")
                 self.last_movement_time = time.time()
+
+                # ReAct Framework: Reflect on action
+                reflection = self._reflect_on_action(action_str, intended_goal)
+
+                # If reflection suggests follow-up action, execute it
+                reflection = self._validate_and_clamp_movement(reflection)
+                if reflection.get('action') and reflection['action'] not in ['land', 'speak']:
+                    print(f"🔄 Follow-up action from reflection: {reflection['action']}")
+                    follow_result = self.vlm.execute_action(reflection)
+                    print(f"✅ {follow_result}")
                 
     def _on_bbox_changed(self):
         """Handle significant movement of tracked person"""
         print(f"📐 Person {self.current_target} moved significantly")
-        
+
         detections = self.vlm.yolo_tracker.get_detections()
         target_det = next((d for d in detections if d['id'] == self.current_target), None)
-        
+
         if target_det:
+            # Don't pass pixel coordinates - VLM will interpret them as meters!
+            pos = self.vlm.drone.get_position()
             decision = self.vlm.process_command(
-                f"Person {self.current_target} moved to {target_det['center']}. Adjust position to keep them centered?"
+                f"At {pos['altitude']:.1f}m altitude, person {self.current_target} has moved in the frame. Should you adjust your position slightly (0.5-2m) to keep them visible and centered?"
             )
-            
+
+            # Validate and clamp movement distances
+            decision = self._validate_and_clamp_movement(decision)
+
             if decision['action']:
+                action_str = f"{decision['action']}({decision.get('params', {})})"
+                intended_goal = f"Keep person {self.current_target} visible and centered"
+
+                # Execute action
                 result = self.vlm.execute_action(decision)
                 print(f"✅ {result}")
+
+                # ReAct Framework: Reflect on action
+                reflection = self._reflect_on_action(action_str, intended_goal)
+
+                # If reflection suggests follow-up, execute
+                reflection = self._validate_and_clamp_movement(reflection)
+                if reflection.get('action') and reflection['action'] not in ['land', 'speak']:
+                    print(f"🔄 Follow-up action: {reflection['action']}")
+                    follow_result = self.vlm.execute_action(reflection)
+                    print(f"✅ {follow_result}")
                 
     def _on_person_lost(self):
         """Handle losing track of current target"""
         print(f"⚠️  Lost sight of person {self.current_target}")
-        
+
+        # Include person description if available
+        encounter = self.encounters.get(self.current_target)
+        person_desc = ""
+        if encounter and encounter.description:
+            person_desc = f" (They were: {encounter.description[:100]})"
+
+        pos = self.vlm.drone.get_position()
         decision = self.vlm.process_command(
-            f"Lost track of person {self.current_target}. Should I search or move to next target?"
+            f"At {pos['altitude']:.1f}m altitude, I lost track of person {self.current_target}{person_desc}. Should I rotate left/right to search, or move forward 1-2m to explore?"
         )
-        
-        self.current_target = None
-        
+
+        # Validate and clamp movement distances
+        decision = self._validate_and_clamp_movement(decision)
+
         if decision['action']:
+            action_str = f"{decision['action']}({decision.get('params', {})})"
+            intended_goal = f"Search for lost person {self.current_target}"
+
+            # Execute action
             result = self.vlm.execute_action(decision)
             print(f"✅ {result}")
+
+            # ReAct Framework: Reflect to see if person found
+            reflection = self._reflect_on_action(action_str, intended_goal)
+
+            # Check if person was found in reflection
+            if reflection.get('action'):
+                reflection = self._validate_and_clamp_movement(reflection)
+                if reflection['action'] not in ['land']:
+                    print(f"🔄 Follow-up: {reflection['action']}")
+                    follow_result = self.vlm.execute_action(reflection)
+                    print(f"✅ {follow_result}")
+
+        self.current_target = None
             
     def _on_movement_complete(self):
         """Handle completion of movement command"""
@@ -267,6 +445,7 @@ class MissionController(Node):
         
     def _on_no_detections(self):
         """Handle no people detected for extended period"""
+        self.last_detection_time = time.time()  # RESET THE TIMER
         print("⏱️  No people detected for 60 seconds")
         
         # Check if mission should complete
@@ -278,7 +457,7 @@ class MissionController(Node):
         else:
             # Continue search pattern
             decision = self.vlm.process_command(
-                "No people detected recently. Should I continue searching or complete mission?"
+                "No people detected. Choose movement: rotate, move_forward, or land to complete mission."
             )
             
             if decision['action'] == 'land':
@@ -293,18 +472,17 @@ class MissionController(Node):
         self._complete_mission()
 
     def _on_person_spoke(self):
-        """Handle person speaking"""
         speech_text = self.speech_queue.get()
         print(f"👤 Person: {speech_text}")
         
-        # Ask VLM to respond
-        decision = self.vlm.process_command(
-            f"The person said: '{speech_text}'. How should I respond?"
-        )
+        decision = self.vlm.process_command(f"Person said: '{speech_text}'. Respond or end conversation?")
         
-        # VLM should return speak action with response text
-        if decision['action'] == 'speak':
-            self.vlm.speak(decision['params'].get('text', 'Hello'))
+        result = self.vlm.execute_action(decision)
+        
+        # Check if conversation ended
+        if result == "conversation_ended":
+            self._handle_event(EventType.CONVERSATION_COMPLETE)
+
         
     def _continue_search(self):
         """Continue search pattern after handling a person"""
