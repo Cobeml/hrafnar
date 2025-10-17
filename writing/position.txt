@@ -1,2 +1,12 @@
 Warfare is always changing. It is the fundamental human proving ground. The adept, strong, innovative, persuasive rise. It is about finding and utilizing the right tools at the right time. Today, the time is of AI enabled autonomy. Previous deep learning systems specialized very well but with the advent of large language models, humans now have access to programmatic general intelligence. Additionally, with fine-tuning techniques such as GRPO and other derivative methods, one can specialize the general intelligence that LLMs bring for tasks which require technical specificity, creating models which are both proficient and adaptive. These models enable for the first time, autonomous agents on the battlefield. This is not a possibility but an inevitability for the near term future of warfare. 
 In conflicts in Ukraine and the middle east, the central nature of drone warfare is already on display. However, these drones autonomous capabilities are extremely limited. If a conflict were to break out over Taiwan. This would be the first conflict between parties with the technical capability and therefore military necessity to bring autonomy onto the battlefield. This will enable adaptable drone swarms operating with minimal human in the loop as to combat electronic warfare attempts.
+
+AI autonomy at scale on battlefield in China and Taiwan reasons:
+- Technical capability in Taiwan and China to make lots of drones
+- Competance of small or mid size AI models is increasing
+- Fine tuning methods on open source models has made them more reliable and increased their technical ability
+- Power of small computers on drones is increasing
+- Electronic warfare and signal jamming decreases the efficacy of human in the loop
+- Both countries have high sophiscation of electronic warfare
+- The sky and sea will be major battlegrounds in the conflict as Taiwan is an island nation
+- Drones have proved competancy against naval vessels in middle east and in Ukraine
