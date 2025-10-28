@@ -1,0 +1,42 @@
+# Annotations  
+(10/17/2025, 12:11:36 PM)
+
+### proposal
+
+“This thesis will examine” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=1&annotation=X5MFPMC2)) Dry intro
+
+“creating a dynamic technological competition with profound implications for” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=1&annotation=B6G8LUY7)) lame sounding
+
+“emerges from the intersection of Ukrainian battlefield innovations and Taiwan’s unique strategic challenges” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=1&annotation=5ACQ2QYJ)) lame
+
+“paradigm shift in modern warfare,” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=1&annotation=ESBDKYXN)) lame
+
+“As documented by Kateryna Bondar’s 2024 analysis for the Center for Strategic and International Studies, Ukraine has achieved what defense analysts describe as functional Combined Joint All-Domain Command and Control technology through Delta.1 The system aggregates data from over 150,000 simultaneous sources, processes targeting information through artificial intelligence, and enables coordination across all military branches through interfaces accessible via standard smartphones and tablets.” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=1&annotation=J25Q8N7M)) good
+
+“must be adapted for maritime operational environments.” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=2&annotation=P497G88B)) interesting
+
+“While Ukrainian drone warfare provides valuable lessons, direct technology transfer proves insufficient for Taiwan’s defense requirements, necessitating systematic examination of what specific adaptations would enable Delta-analogue systems to function effectively in cross-strait scenarios.” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=2&annotation=ZF9SEF6L)) interesting point
+
+“April and October create natural defensive advantages that concentrate invasion forces into predictable kill zones” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=2&annotation=I7EGRTH9)) interesting
+
+“quantitative metrics” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=2&annotation=6YFHDUGD)) what metrics? or do you mean just qualatative assessment?
+
+“The challenge of adapting Ukrainian innovations to Taiwan’s maritime environment receives detailed treatment in Stacie Pettyjohn, Hannah Dennis, and Molly Campbell’s 2024 study for the Center for a New American Security on drone warfare in a future fight to defend Taiwan.3” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=2&annotation=6MSQ8GWE)) These intro sentences for the individual sources do not seem necessary. Just go straight to info and details.
+
+“Indo-Pacific distances requiring drones costing $50,000-$500,000 with ranges exceeding 100 kilometers” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=2&annotation=926H7TR9)) Does
+
+“Pettyjohn and colleagues provide quantitative modeling showing that 100-drone swarms can achieve 60-75% mission kill probability” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=2&annotation=8Q4YI2VY))
+
+“he CNAS research establishes critical parameters for evaluating what software capabilities Deltaanalogue systems require to coordinate these more sophisticated maritime drone operations effectively.” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=3&annotation=NZY5IJY9)) Concluding sentences can also be cut.
+
+“Ukrainian lessons, undertaking aggressive counter-drone modernization integrating detection systems, electronic warfare capabilities, kinetic interceptors, and directed energy weapons.” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=3&annotation=57H424MX))
+
+“mid-range electronic warfare at 50-200 kilometers using sophisticated jamming capabilities including J-16D electronic warfare aircraft, and short-range hard destruction at 5-50 kilometers deploying directed energy weapons such as high-power microwave systems and laser interceptors.” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=3&annotation=AJHUKR3R))
+
+“40% hit rates against small drone swarms even using relatively dated systems against just 11-12 commercial drone” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=3&annotation=79MYRLMM))
+
+“PLAN forces must maintain formation over extended crossings while simultaneously coordinating air defense, managing electromagnetic spectrum cont” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=3&annotation=9W5YSJNJ)) Great, interesting paragraph
+
+“The primary research question guiding this thesis asks what software capabilities and architectural features a Delta-analogue command-and-control system would require to effectively coordinate autonomous drone operations in Taiwan Strait defense scenarios, and what strategic impact such a system would have on cross-strait military balance. This central inquiry generates several subsidiary questions that structure the investigation.” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=3&annotation=I2NK3VH2)) repeats intro
+
+“First, what specific technical adaptations are necessary to translate Ukraine’s land-based Delta system to Taiwan’s maritime operational environment, particularly regarding targeting algorithms, navigation systems, and coordination protocols? Second, how do extended engagement ranges, maritime target characteristics, and weather constraints alter software requirements for effective drone operations against amphibious threats? Third, what force multiplication effects and cost-exchange ratios could Taiwan achieve through optimized drone command-and-control systems during critical conflict phases including pre-invasion reconnaissance, anti-ship operations during strait crossing, and coastal defense? Fourth, how would Chinese counter-drone capabilities and electronic 4Ditter, Timothy. “PRC Concepts for UAV Swarms in Future Warfare.” Center for Naval Analyses, July 11, 2025. warfare systems constrain the effectiveness of AI-enabled drone coordination in cross-strait scenarios, and what software resilience features would mitigate these threats? Fifth, what are the strategic deterrence implications—both stabilizing and destabilizing—of Taiwan fielding Delta-equivalent drone coordination capabilities, particularly regarding Chinese calculations about capability windows and preemptive action incentives?” ([pdf](zotero://open-pdf/library/items/MU7CVMX2?page=3&annotation=6XQ27JQ5)) These questions seem unnatural flow
