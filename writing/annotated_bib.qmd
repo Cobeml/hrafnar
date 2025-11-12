@@ -1,10 +1,10 @@
 ---
-title: "Intelligence-Powered Drone Command Systems for Cross-Strait Defense: Adapting Ukraine's Delta Model to Taiwan's Maritime Strategic Environment"
+title: "Intelligence-Powered Drone Command Systems for Cross-Strait Defense: Adapting Network Centric Warfare and Ukraine's Delta Model to Taiwan's Maritime Strategic Environment"
 author: "Cobe Liu"
-date: "October 16, 2025"
-bibliography: proposal.bib
+date: "October 29, 2025"
+bibliography: annotated_bib.bib
 nocite: |
-  @bondar_does_2024, @cancian_first_2023, @pettyjohn_drone_2024, @ditter_prc_2025
+  @cancian_first_2023, @bondar_does_2024, @pettyjohn_drone_2024, @ditter_prc_2025, @understanding_military_ai_2024, @lessons_war_2025, @ukrainian_way_2024, @chinese_amphibious_2024, @military_security_2024, @network_centric_2000, @scalable_interactive_2024, @re-envisioning_2024, @network-centric_1998
 format:
   pdf:
     toc: false
@@ -12,18 +12,342 @@ format:
     colorlinks: true
 ---
 
-Ukrainian forces plan around 106,000 drone missions monthly, detect and classify over 4,000 reconnaissance targets daily and 12,000 pieces of enemy equipment weekly, using information contributed by military personnel on over 600,000 enemy objects monthly via the Delta situational awareness system. Delta is establishing the first Combined Joint All-Domain Command and Control system in modern warfare [@bondar_does_2024]. Delta aggregates data from heterogeneous sources from civilian and open source intelligence to military sensors and utilizes computer vision to generate insights. Using these insights, Delta allows for the coordination of mission planning and execution across all military branches, including drone operations. 
+# Annotated Bibliography: Network Centric Warfare and Modern Geopolitics
 
-This study will analyze whether Taiwan can adapt Delta's software architecture for cross-strait defense, addressing what specific capabilities would enable effective drone coordination against amphibious invasion and how such a system would affect military balance as Taiwan looks to increase its drone arsenal. Taiwan faces fundamentally different strategic challenges than Ukraine, specifically defending against amphibious invasion across the 110-mile Taiwan Strait. The maritime setting, extended engagement ranges, limited operational windows due to weather, and concentration of invasion forces during strait crossings create distinct requirements that differ substantially from Ukraine's land-based operations.
+## Complete Annotated Bibliography
 
-Across 24 wargaming iterations, CSIS research documents that Chinese amphibious operations face challenges more difficult than the Normandy landings due to the Taiwan Strait's geographic characteristics [@cancian_first_2023]. The 110-mile strait width, limited viable landing beaches restricted to 14-20 locations, and operational windows constrained to April and October create natural defensive advantages that concentrate invasion forces into predictable kill zones. The wargaming concludes that even under optimistic Chinese assumptions, invasion fleets arrive "in shambles" when Taiwan employs integrated anti-ship capabilities, with modeling showing 138 Chinese ships destroyed across scenarios.
+### 1. The First Battle of the Next War: Wargaming a Chinese Invasion of Taiwan
 
-Exploiting these geographic advantages requires understanding how maritime operations reshape drone coordination software requirements. Maritime drone operations exhibit fundamentally different characteristics than land warfare, with Indo-Pacific distances requiring drones costing $50,000-$500,000 with ranges exceeding 100 kilometers, compared to Ukraine's $300-$1,000 first-person view drones with 10-40 kilometer ranges. It also requires coordination of heterogenous systems, and integrate with both Taiwanese and American systems. Stacie Pettyjohn and colleagues recommend the Taiwanese procurement and training for anti-ship drone boats, as well as short and mid-range drones to support the defense of Taiwan's coastline, as well as the American procurement of long range drones for kamikaze attacks and surveillance [@pettyjohn_drone_2024]. Coordination of heterogenous systems, and integration with both Taiwanese and American systems is a critical requirement for any Delta adaptation.
+**Cancian, Mark F., Matthew Cancian, and Eric Heginbotham.** "The First Battle of the Next War: Wargaming a Chinese Invasion of Taiwan." Center for Strategic and International Studies, January 9, 2023. https://www.csis.org/analysis/first-battle-next-war-wargaming-chinese-invasion-taiwan
 
-Any Delta adaptation must account for both the potential and limitations of opposing counter-drone systems. China has systematically absorbed Ukrainian lessons, undertaking aggressive counter-drone modernization integrating detection systems, electronic warfare capabilities, kinetic interceptors, and directed energy weapons [@ditter_prc_2025]. The PLA's layered counter-drone doctrine operates across four engagement zones, with long-range detection beyond 200 kilometers employing satellites and radar networks, mid-range electronic warfare at 50-200 kilometers using sophisticated jamming capabilities including J-16D electronic warfare aircraft, and short-range hard destruction at 5-50 kilometers deploying directed energy weapons such as high-power microwave systems and laser interceptors. However, recent exercises demonstrated only 40% hit rates against small drone swarms even using relatively dated systems against just 11-12 commercial drones, revealing critical vulnerabilities. Chinese military analyses acknowledge traditional air defenses struggle against small, agile, low-flying drone swarms, creating an exploitable weakness during amphibious operations when PLAN forces must maintain formation over extended crossings while simultaneously coordinating air defense, managing electromagnetic spectrum control, tracking hundreds of incoming threats, and conducting landing operations under fire.
+This study presents findings from 24 iterations of a wargame modeling a Chinese amphibious invasion of Taiwan in 2026, representing the most comprehensive unclassified analysis of this contingency scenario. The main thesis argues that while U.S./Taiwan/Japan forces could successfully defend Taiwan from Chinese invasion in most scenarios, victory would come at catastrophic cost, making deterrence strengthening urgent. The methodology employs a hybrid quantitative approach combining historical analogies (Normandy, Okinawa, Falklands operations) with theoretical weapons performance data to create analytically-based combat resolution rules rather than relying on subjective judgment. Principal findings reveal that successful defense requires five critical conditions: Taiwan must resist forcefully and start with all needed equipment; U.S. access to Japanese bases is essential; and immediate U.S. military response is crucial. Key insights include extreme vulnerability of surface ships, massive coalition aircraft losses from ground strikes (90% from Chinese ballistic missiles), effectiveness of long-range anti-ship missiles, and critical importance of Taiwanese ground forces. This research directly addresses Network Centric Warfare principles by highlighting the vulnerability of traditional platforms to precision strike networks and the importance of distributed operations. The study's strength lies in its transparent methodology, extensive iteration, use of unclassified data enabling public discourse, and rigorous analytical framework.
 
-These geographic, operational, and threat considerations establish the analytical framework for this investigation. This research will examine what software capabilities and architectural features a Delta-analogue command-and-control system would require to effectively coordinate autonomous drone operations in Taiwan Strait defense scenarios, and what strategic impact such a system would have on cross-strait military balance. The investigation will focus on technical adaptations necessary to translate Ukraine's land-based Delta system to Taiwan's maritime operational environment, particularly regarding targeting algorithms, navigation systems, and coordination protocols. The study will evaluate how extended engagement ranges, maritime target characteristics, and weather constraints alter software requirements, while assessing force multiplication effects Taiwan could achieve during critical conflict phases. The research will also analyze how Chinese counter-drone capabilities would constrain AI-enabled drone coordination effectiveness and examine strategic deterrence implications of Taiwan fielding Delta-equivalent capabilities.
+**Bibliographic Status:** ✓ No errors found
 
+---
+
+### 2. Does Ukraine Already Have Functional CJADC2 Technology?
+
+**Bondar, Kateryna.** "Does Ukraine Already Have Functional CJADC2 Technology?" Center for Strategic and International Studies, December 11, 2024. https://www.csis.org/analysis/does-ukraine-already-have-functional-cjadc2-technology
+
+This report analyzes Ukraine's Delta situational awareness system as a functional battlefield implementation of Combined Joint All-Domain Command and Control (CJADC2) principles, arguing it exemplifies software-defined warfare and provides practical lessons for U.S. Department of Defense modernization efforts. The main thesis contrasts Ukraine's successful bottom-up approach with DOD's struggling top-down CJADC2 vision, demonstrating how battlefield-driven necessity can accelerate technological innovation. The study documents how Delta originated with volunteer group Aerorozvidka as a simple digital map and evolved into a comprehensive ecosystem supporting nearly all Ukrainian military operations, including strikes 900-1200 miles into Russian territory. Key findings emphasize Delta's cloud-based architecture enabling rapid iteration, integration of diverse data streams (drones, satellites, electronic warfare, ground reports), NATO interoperability (Link 16 compatibility with F-16s), and alignment with ISTAR and C4ISR frameworks. Relevance to Network Centric Warfare is direct and significant: Delta demonstrates practical implementation of network-centric principles including distributed sensor integration, rapid information sharing, accelerated kill chains, and software-defined adaptability. For Taiwan contingency planning, the report offers critical lessons on rapidly deployable command-and-control systems, importance of commercial technology leverage, value of iterative development over requirements-based acquisition, and advantages of cloud-native architectures for resilience.
+
+**Bibliographic Status:** ✓ No errors found
+
+---
+
+### 3. Swarms over the Strait: Drone Warfare in a Future Fight to Defend Taiwan
+
+**Pettyjohn, Stacie, Hannah Dennis, and Molly Campbell.** "Swarms over the Strait: Drone Warfare in a Future Fight to Defend Taiwan." Center for a New American Security, June 20, 2024. https://www.cnas.org/publications/reports/swarms-over-the-strait
+
+This comprehensive report examines how drone warfare, informed by recent conflicts in Libya, Nagorno-Karabakh, and Ukraine, would impact a potential U.S.-China conflict over Taiwan. The main thesis argues that while drones represent an evolutionary rather than revolutionary change in warfare, China currently holds a significant advantage in drone capabilities that poses serious risks to U.S. and Taiwanese forces. The authors employ a mixed-methods approach, developing a novel dataset tracking global drone transfers from 1995-2023, conducting three detailed case studies of recent conflicts, and executing a tabletop exercise to develop operational concepts. Key findings demonstrate that geography disadvantages the United States, requiring longer-range, more expensive drones than those effective in Ukraine. The report identifies critical capability gaps: China possesses a large, diverse fleet of relatively inexpensive drones while U.S. and Taiwanese forces lack adequate inventories and counterdrone defenses. Principal findings emphasize that drones excel when integrated with other systems for rapid kill chain closure, particularly in artillery coordination. The study documents how Turkish and Chinese drone exports have reshaped global proliferation patterns while U.S. MTCR adherence limits its drone diplomacy. For Network Centric Warfare, this report provides crucial insights into information-sharing architectures and sensor-to-shooter coordination.
+
+**Bibliographic Correction:** Original citation missing subtitle. Complete title should be "Swarms over the Strait: Drone Warfare in a Future Fight to Defend Taiwan"
+
+---
+
+### 4. PRC Concepts for UAV Swarms in Future Warfare
+
+**Ditter, Timothy.** "PRC Concepts for UAV Swarms in Future Warfare." Center for Naval Analyses, July 11, 2025. Report number DOP-2024-U-040462-1Rev. https://www.cna.org/analyses/2025/07/prc-concepts-for-uav-swarms-in-future-warfare
+
+This analytical report examines People's Liberation Army writings from 2020-2024 to assess PRC concepts for employing UAV swarms in future warfare, with specific focus on Taiwan invasion scenarios. The central thesis argues that the PLA is actively researching and developing autonomous drone swarm technology as a solution to one of its most difficult military challenges—an amphibious assault or blockade of Taiwan. The methodology relies on primary source analysis of PLA professional military journals, PRC defense industrial complex technical publications, and state-controlled media. Key findings reveal that PRC defense thinkers identify drone swarms as providing asymmetric advantages including lower casualty rates, reduced costs, easier operator training, and capabilities to overwhelm advanced systems like the U.S. Navy's Aegis Combat System. The report documents PRC research on employing swarms across three phases of amphibious operations: crossing (ISR and early warning), landing (situational awareness and fire suppression), and post-landing (obstacle clearing and close air support). Critically, the analysis reveals PLA awareness of drone swarm vulnerabilities and active development of countermeasures. For Network Centric Warfare analysis, this report illuminates PRC concepts for command and control of distributed autonomous systems and multi-domain coordination between manned and unmanned platforms.
+
+**Bibliographic Status:** ✓ No errors found. The July 11, 2025 date is accurate (published approximately 3.5 months before current date of October 29, 2025).
+
+---
+
+### 5. Understanding the Military AI Ecosystem of Ukraine
+
+**Bondar, Kateryna.** "Understanding the Military AI Ecosystem of Ukraine." Center for Strategic and International Studies, November 12, 2024. https://www.csis.org/analysis/understanding-military-ai-ecosystem-ukraine
+
+This report provides comprehensive analysis of Ukraine's military artificial intelligence development ecosystem, examining both the preconditions enabling rapid AI adoption and the governmental institutions driving implementation. The author argues that Ukraine's military AI represents an unprecedented case study of wartime innovation, where existential threat has accelerated technological integration despite significant resource constraints. The report's central thesis posits that Ukraine's decentralized, grassroots approach to military AI—while successful in rapid deployment—requires greater strategic coordination and institutionalization for long-term sustainability. Bondar employs qualitative research based on extensive interviews with Ukrainian Armed Forces representatives, Ministry of Defense officials, and defense technology executives. The study systematically profiles key institutions including the Ministry of Defense's Center for Innovation and Defense Technologies, the Unmanned Systems Forces, Defense Intelligence (DIU), and the Ministry of Digital Transformation's Brave1 initiative. Principal findings reveal that Ukraine transitioned from approximately two dozen military AI companies in early 2022 to over one thousand by 2024, with AI deployed primarily in supportive functions rather than fully autonomous systems. For Network Centric Warfare scholarship, this source is invaluable in documenting real-world implementation of distributed battle management systems like Delta.
+
+**Bibliographic Corrections:** Original citation missing publisher (Center for Strategic and International Studies), publication date (November 12, 2024), and URL.
+
+---
+
+### 6. Lessons from the War in Ukraine for Space
+
+**Radin, Andrew, Khrystyna Holynska, Cheyenne Tretter, and Thomas Van Bibber.** "Lessons from the War in Ukraine for Space: Challenges and Opportunities for Future Conflicts." RAND Corporation, RR-A2950-1, May 21, 2025. https://www.rand.org/pubs/research_reports/RRA2950-1.html
+
+This RAND report analyzes the unprecedented role of space-based services in the Russia-Ukraine war, extracting lessons for future conflicts involving the United States. The authors' central thesis argues that space operations have fundamentally shaped the war's conduct through satellite communications, positioning/navigation/timing services, and intelligence/surveillance/reconnaissance capabilities, while simultaneously exposing critical vulnerabilities that adversaries will exploit in future conflicts. The report emphasizes that commercial space assets have proven essential yet double-edged, providing resilience through distributed architectures while introducing governance challenges. Key findings demonstrate that commercial satellite constellations (particularly Starlink) provided Ukraine operational continuity after Russian cyberattacks disabled Viasat services, though informal arrangements created dependencies on corporate decisions misaligned with military objectives. The report documents extensive Russian GPS/GNSS jamming forcing both sides to develop countermeasures. Commercial ISR satellites democratized intelligence access, enabling real-time battlefield awareness previously limited to superpowers. For Network Centric Warfare and military space operations, this source is essential for understanding how distributed space architectures enable resilient command-and-control networks under contested conditions.
+
+**Bibliographic Status:** ✓ No errors found. The May 21, 2025 date is accurate (published approximately 5 months before current date of October 29, 2025).
+
+---
+
+### 7. The Ukrainian Way of Digital Warfighting
+
+**Soesanto, Stefan.** "The Ukrainian Way of Digital Warfighting: Volunteers, Applications, and Intelligence Sharing Platforms." CSS Cyberdefense Report, Center for Security Studies (CSS), ETH Zürich, July 2024. http://hdl.handle.net/20.500.11850/685245
+
+This report provides comprehensive analysis of Ukraine's digital warfare evolution through the lens of the Delta military situational awareness platform, tracing its development from 2015 through Russia's 2022 invasion. The main thesis argues that Ukraine's bottom-up, volunteer-driven approach to military digitalization represents a paradigm shift in modern warfare, effectively implementing network-centric warfare concepts in real combat conditions. The author employs case study methodology, using Delta's evolution as a framework to examine the broader ecosystem of Ukrainian digital platforms, mobile applications (including eEnemy for civilian intelligence gathering), and volunteer groups like Aerorozvidka. Principal findings reveal that Ukraine's "miltech revolution" demonstrates the viability of rapidly integrating civilian IT expertise with military operations, achieving battlefield decision-making speeds surpassing "some more modern militaries" according to NATO officials. The report distinguishes "digital warfare" (digitalization of kinetic battlefield through information sharing) from cyber warfare (offensive operations against digital systems). For Network Centric Warfare scholarship, this source provides essential empirical validation of NCW theory under high-intensity combat conditions, offering critical lessons on leveraging civilian technological sectors and rapid platform development under existential threat.
+
+**Bibliographic Status:** ✓ No errors found
+
+---
+
+### 8. Chinese Amphibious Warfare: Prospects for a Cross-Strait Invasion
+
+**Erickson, Andrew S., Conor M. Kennedy, and Ryan D. Martinson, eds.** *Chinese Amphibious Warfare: Prospects for a Cross-Strait Invasion.* Studies in Chinese Maritime Development No. 8. Newport, RI: Naval War College Press, 2024. ISBN 978-1-935352-86-0. https://digital-commons.usnwc.edu/cmsi-studies/8/
+
+This authoritative 495-page edited volume represents the most comprehensive analysis to date of PLA amphibious warfare capabilities in a Taiwan invasion scenario, synthesizing research from leading U.S. military, intelligence, and academic experts. The central thesis argues that while the PLA has achieved tremendous progress in developing invasion capabilities, inherent operational challenges and persistent PLA weaknesses mean that deterrence remains feasible if Taiwan, the U.S., and Japan act decisively. The methodology combines doctrinal analysis, historical case studies (from Shi Lang's 1683 conquest to modern PLA operations), detailed order-of-battle assessments, and scenario-based operational analysis. Key findings reveal critical PLA limitations: jointness deficiencies despite reforms, lack of combat experience, logistics incapable of sustaining invasion forces, and inadequate amphibious lift requiring heavy civilian asset reliance. However, the PLA excels in missile capabilities, sensor/shooter development for air/sea control, mine warfare (possibly world-leading), and systematic incorporation of lessons from foreign operations. For Network Centric Warfare, the volume extensively analyzes PLA C4ISR integration requirements and joint coordination challenges. The work's exceptional strength lies in its multi-disciplinary expert contributions, granular technical analysis, and balanced assessment acknowledging both PLA progress and persistent vulnerabilities.
+
+**Bibliographic Corrections:** Original citation missing publisher (Naval War College Press), publication location (Newport, RI), publication date (November 7-8, 2024), series information (Studies in Chinese Maritime Development No. 8), ISBN (978-1-935352-86-0), and URL. Also note: these are editors, not sole authors.
+
+---
+
+### 9. Military and Security Developments Involving the People's Republic of China 2024
+
+**Office of the Secretary of Defense.** *Military and Security Developments Involving the People's Republic of China 2024.* Annual Report to Congress. Washington, D.C.: U.S. Department of Defense, December 18, 2024. https://media.defense.gov/2024/Dec/18/2003615520/-1/-1/0/MILITARY-AND-SECURITY-DEVELOPMENTS-INVOLVING-THE-PEOPLES-REPUBLIC-OF-CHINA-2024.PDF
+
+This congressionally-mandated annual report assesses the People's Republic of China's national, economic, and military strategy, providing authoritative analysis of PLA capabilities, modernization goals, and force activities through early 2024. The report's central thesis identifies the PRC as the "pacing challenge" for U.S. defense, documenting China's systematic pursuit of "national rejuvenation" by 2049 through coordinated political, economic, technological, and military development. Key arguments demonstrate the PLA's accelerating modernization across all warfare domains—nuclear, cyber, space, and conventional forces. The report documents China's rapid nuclear expansion (600+ operational warheads as of mid-2024, projected 1,000+ by 2030), the world's largest navy (370+ ships), and unprecedented investments in hypersonic missiles, AI, and quantum technologies. Critical findings include intensifying pressure on Taiwan through gray-zone operations, PLA structural reforms (dissolution of Strategic Support Force, creation of Information Support Force), and deepening PRC-Russia military cooperation. This source is essential for understanding Network Centric Warfare's PRC context, as China pursues "intelligentized warfare" integrating AI, big data, and network-centric operations into its military transformation. The report's detailed analysis of PLA C4ISR capabilities and information warfare concepts directly parallels NCW principles.
+
+**Bibliographic Corrections:** Original citation missing author (Office of the Secretary of Defense), publisher (U.S. Department of Defense), publication date (December 18, 2024), and URL. Should also note this is an "Annual Report to Congress."
+
+---
+
+### 10. Network Centric Warfare: Developing and Leveraging Information Superiority
+
+**Alberts, David S., John J. Garstka, and Frederick P. Stein.** *Network Centric Warfare: Developing and Leveraging Information Superiority.* 2nd ed. (revised). Washington, D.C.: CCRP Publication Series, DoD Command and Control Research Program, February 2000. https://apps.dtic.mil/sti/citations/tr/ADA406255
+
+This seminal work represents the first comprehensive articulation of Network Centric Warfare doctrine, establishing the theoretical and operational framework for Information Age military transformation. The authors' central thesis posits that dominant military advantage derives from translating information superiority into combat power through robust networking of sensors, decision makers, and shooters across geographically dispersed forces. The book's key arguments demonstrate how NCW fundamentally shifts warfare from platform-centric to network-centric operations, drawing parallels from commercial sector transformations where dominant competitors leveraged information technology to achieve competitive advantage. Core concepts include: achieving shared battlespace awareness, enabling self-synchronization of forces, increasing speed of command, enhancing operational tempo, and generating disproportionate combat effects through superior information position. The authors articulate NCW's focus on human and organizational behavior rather than technology alone, emphasizing the "coevolution" of doctrine, organization, training, materiel, leadership, personnel, and facilities. For research on Taiwan/PRC military capabilities, this work is foundational—it establishes the doctrinal baseline against which China's own network-centric warfare adaptations must be measured. The book's greatest strength lies in its rigorous theoretical framework and recognition that NCW transformation requires fundamental changes in military culture and organization.
+
+**Bibliographic Corrections:** Original citation listed publisher as "Defense Technical Information Center"—while DTIC hosts the document (ADA406255), the actual publisher is "CCRP Publication Series, DoD Command and Control Research Program." Also missing edition information (2nd ed., revised).
+
+---
+
+### 11. Scalable Interactive Machine Learning for Future Command and Control
+
+**Madison, Anna, Ellen Novoseller, Vinicius G. Goecks, Benjamin T. Files, Nicholas Waytowich, Alfred Yu, Vernon J. Lawhern, Steven Thurman, Christopher Kelshaw, and Kaleb McDowell.** "Scalable Interactive Machine Learning for Future Command and Control." arXiv preprint arXiv:2402.06501v2, February 9, 2024 (last revised March 28, 2024). https://arxiv.org/html/2402.06501v2. Also published in *Proceedings of the International Conference on Military Communication and Information Systems (ICMCIS)*, 2024.
+
+This paper addresses the critical challenge of accelerating Command and Control decision-making in future warfare environments characterized by shrinking timescales, complexity, and ill-defined situations. The authors propose Scalable Interactive Machine Learning (SIML) as a framework to enable robust human-AI partnerships that can revolutionize C2 operations through enhanced adaptability and efficiency. The paper's main thesis argues that integrating artificial and human intelligence through interactive machine learning—where humans cooperate with ML algorithms to guide their behavior—offers the most promising path forward for future C2 systems. The methodology centers on three interconnected research focus areas: developing human-AI interaction algorithms for planning in complex environments; fostering resilient human-AI teaming through optimized team configurations; and scaling these methods across diverse battlefield scenarios. Key findings emphasize that while AI can efficiently traverse large datasets and estimate action outcomes, humans provide essential domain knowledge, intuition, and common sense. The research is highly relevant to Network Centric Warfare, as it directly addresses distributed decision-making under uncertainty and information constraints. The paper's strength lies in its comprehensive identification of research gaps and its practical framework for operationalizing human-AI collaboration in military C2 contexts.
+
+**Bibliographic Corrections:** Original citation missing authors (10 total authors listed above) and publication/submission dates (February 9, 2024, revised March 28, 2024).
+
+---
+
+### 12. Re-Envisioning Command and Control
+
+**McDowell, Kaleb, Ellen Novoseller, Anna Madison, Vinicius G. Goecks, and Christopher Kelshaw.** "Re-Envisioning Command and Control." arXiv preprint arXiv:2402.07946v2, February 9, 2024 (last revised March 28, 2024). https://arxiv.org/html/2402.07946v2. Also published in *Proceedings of the International Conference on Military Communication and Information Systems (ICMCIS)*, 2024.
+
+This paper presents a comprehensive vision for transforming C2 operations from industrial-era linear processes to intelligence-era adaptive systems capable of meeting future warfare demands. The authors argue that current C2 practices are inadequate for future battlefields requiring decisions in complex, fast-paced, ill-structured conditions, particularly under DDIL communications and multi-domain operations. The central thesis advocates for robust human-AI partnerships as the foundation for next-generation C2 systems. The paper's methodology centers on a notional capability called the Intelligent Course of Action Suite (iCOAs), which exemplifies three operational impacts: streamlining the C2 operations process, maintaining unity of effort, and developing adaptive collective knowledge systems. The iCOAs concept envisions an interactive technological system that can instantaneously integrate available information into high-resolution Courses of Action containing substantially more detail than current capabilities. Principal findings emphasize that an advanced scalable version (iCOAs-S) should operate across multiple echelons, enabling different interaction modes. The research demonstrates high relevance to Network Centric Warfare through its emphasis on distributed yet synchronized decision-making, real-time information integration, and adaptive planning across organizational hierarchies. The paper's strength lies in its holistic approach, addressing technological capabilities and organizational changes.
+
+**Bibliographic Corrections:** Original citation missing authors (5 authors listed above) and publication/submission dates (February 9, 2024, revised March 28, 2024).
+
+---
+
+### 13. Network-Centric Warfare: Its Origin and Future
+
+**Cebrowski, Arthur K., and John J. Garstka.** "Network-Centric Warfare: Its Origin and Future." *U.S. Naval Institute Proceedings* 124, no. 1 (January 1998): 28-35. https://www.usni.org/magazines/proceedings/1998/january/network-centric-warfare-its-origin-and-future
+
+This seminal article represents the foundational articulation of Network-Centric Warfare (NCW) doctrine and remains one of the most influential publications in modern military strategic thinking. Vice Admiral Cebrowski and Garstka argue that the United States is experiencing a revolution in military affairs (RMA) comparable in significance to the Napoleonic levée en masse—representing "a fundamental shift from what we call platform-centric warfare to something we call network-centric warfare." The authors' central thesis posits that NCW derives its transformative power from fundamental changes in American society driven by the co-evolution of economics, information technology, and business processes. The article presents three core themes: the shift from platform to network focus, viewing military actors as part of continuously adapting ecosystems, and the imperative of strategic adaptation. Drawing extensively from business case studies (Wal-Mart's information superiority, the WINTEL lock-in effect), the authors develop key operational concepts including sensor grids, engagement grids, high-quality information backplanes, speed of command, and self-synchronization. The article's foundational role in NCW doctrine is unparalleled—it provided the conceptual framework that shaped U.S. military transformation efforts for two decades. Its strengths include prescient insights about information warfare's strategic value and the importance of networked operations in modern combat.
+
+**Bibliographic Corrections:** Original citation missing authors (Vice Admiral Arthur K. Cebrowski, USN, and John J. Garstka), volume/issue information (Volume 124, Issue 1), and page numbers (28-35).
+
+---
+
+### 14. On War
+
+**Clausewitz, Carl von.** *On War.* Edited and translated by Michael Eliot Howard and Peter Paret. Princeton, NJ: Princeton University Press, 1984.
+
+Clausewitz's *On War*, written in the early 19th century but published posthumously in 1832, remains the most influential theoretical work on warfare in Western military thought. The Howard and Paret translation and edition (revised 1984) is considered the definitive English version. Clausewitz's central thesis—that war is "a continuation of political intercourse, carried on by other means"—establishes war's fundamentally political nature, a principle that resonates powerfully in understanding Network-Centric Warfare's role in achieving policy objectives. His "remarkable trinity" (violence and passion of the people, chance and probability in combat, and subordination to rational policy) provides an analytical framework that transcends technological epochs. Key enduring principles critically relevant to modern operations include: the concepts of fog and friction (uncertainty and unpredictability inherent in warfare), the center of gravity (identifying and targeting the source of an adversary's power), and culminating point (recognizing operational limits). In the NCW context, these Clausewitzian insights remain vital—modern information systems may reduce fog through enhanced situational awareness, but cannot eliminate friction's human and organizational dimensions. The Princeton edition's scholarly apparatus enhances understanding of how classical theory informs modern practice. While written for 19th-century European warfare, Clausewitz's philosophical approach to war's nature ensures continuing relevance to Network-Centric operations, cognitive warfare, and asymmetric conflicts.
+
+**Bibliographic Status:** ✓ No errors found
+
+---
+
+### 15. Countering the Swarm: Protecting the Joint Force in the Drone Age
+
+**Pettyjohn, Stacie and Molly Campbell.** "Countering the Swarm: Protecting the Joint Force in the Drone Age." Center for a New American Security, September 10, 2025. https://www.cnas.org/publications/reports/countering-the-swarm
+
+This report provides comprehensive assessment of U.S. counter-drone capabilities amid the democratization of precision strike through proliferation of inexpensive unmanned aerial systems. The central thesis argues that the Department of Defense faces an urgent capability gap: despite nearly a decade of investment in counter-UAS technologies, insufficient scale and urgency have left U.S. forces unprepared for mass drone attacks, particularly from China's People's Liberation Army in a potential Taiwan conflict. The authors employ a multi-method approach combining defense spending analysis (2015-2025), two case studies of U.S. operations in the Middle East (Army operations and the USS Carney's Red Sea battle), and a tabletop exercise simulating Chinese drone swarms. Principal findings reveal that while U.S. forces successfully intercepted most of the hundreds of Iranian-backed militia drones in 2023-2024 Middle East attacks, these operations depleted interceptor stockpiles and exposed vulnerabilities against sustained low-intensity threats. The research demonstrates that no "silver bullet" exists—effective defense requires layered systems integrating multiple sensors and effectors, passive defenses, AI-enabled battle management, and high-power microwave weapons capable of defeating swarms. This work is directly relevant to Network Centric Warfare through its emphasis on Joint All-Domain Command and Control (JADC2) integration and AI-accelerated kill chains. The report's strength lies in its empirical rigor, combining quantitative budget analysis with operational lessons and wargaming insights.
+
+**Bibliographic Corrections:** Original citation missing publication date (September 10, 2025).
+
+---
+
+### 16. Ukraine's Future Vision and Current Capabilities for Waging AI-Enabled Autonomous Warfare
+
+**Bondar, Kateryna.** "Ukraine's Future Vision and Current Capabilities for Waging AI-Enabled Autonomous Warfare." Center for Strategic and International Studies, March 6, 2025. https://www.csis.org/analysis/ukraines-future-vision-and-current-capabilities-waging-ai-enabled-autonomous-warfare
+
+This report examines Ukraine's rapid advancement of AI-enabled autonomous systems, challenging inflated perceptions of battlefield AI while documenting genuine technological progress. The central thesis posits that while fully autonomous warfare remains aspirational, Ukraine has achieved significant partial autonomy in aerial systems, particularly autonomous final-approach navigation that increases strike success rates from 10-20% to 70-80%. The methodology relies on dozens of interviews with Ukrainian military officials and defense manufacturers, supplemented by analysis of procurement data and operational outcomes. Key findings reveal that Ukraine leveraged open-source AI models retrained on classified battlefield data tailored to specific front sectors and drone types, enabling rapid, cost-effective development of specialized systems. Of nearly 2 million drones contracted in 2024, only 10,000 (0.5%) employed AI guidance, yet their effectiveness prompted plans to equip approximately 50% of 2025 procurement with autonomous capabilities—a potential twelve-fold increase. The research documents Ukraine's creation of the Delta system as a unified military dataset, and encryption strategies that preserve technological advantages despite hardware vulnerability. Training time for autonomous systems dropped to 30 minutes-to-one-day. Critically relevant to autonomous warfare doctrine, the report emphasizes persistent "human-in-the-loop" requirements for engagement decisions. The report's strength lies in its insider access and empirical grounding, distinguishing between media hype and battlefield reality.
+
+**Bibliographic Status:** ✓ No errors found. The March 6, 2025 date is accurate (published approximately 8 months before current date of October 29, 2025).
+
+
+## Corrected BibTeX Entries
+
+```bibtex
+@report{cancian2023first,
+  author = {Cancian, Mark F. and Cancian, Matthew and Heginbotham, Eric},
+  title = {The First Battle of the Next War: Wargaming a Chinese Invasion of Taiwan},
+  institution = {Center for Strategic and International Studies},
+  year = {2023},
+  month = {January},
+  day = {9},
+  url = {https://www.csis.org/analysis/first-battle-next-war-wargaming-chinese-invasion-taiwan}
+}
+
+@report{bondar2024cjadc2,
+  author = {Bondar, Kateryna},
+  title = {Does Ukraine Already Have Functional {CJADC2} Technology?},
+  institution = {Center for Strategic and International Studies},
+  year = {2024},
+  month = {December},
+  day = {11},
+  url = {https://www.csis.org/analysis/does-ukraine-already-have-functional-cjadc2-technology}
+}
+
+@report{pettyjohn2024swarms,
+  author = {Pettyjohn, Stacie and Dennis, Hannah and Campbell, Molly},
+  title = {Swarms over the Strait: Drone Warfare in a Future Fight to Defend Taiwan},
+  institution = {Center for a New American Security},
+  year = {2024},
+  month = {June},
+  day = {20},
+  url = {https://www.cnas.org/publications/reports/swarms-over-the-strait}
+}
+
+@report{ditter2025prc,
+  author = {Ditter, Timothy},
+  title = {{PRC} Concepts for {UAV} Swarms in Future Warfare},
+  institution = {Center for Naval Analyses},
+  year = {2025},
+  month = {July},
+  day = {11},
+  number = {DOP-2024-U-040462-1Rev},
+  url = {https://www.cna.org/analyses/2025/07/prc-concepts-for-uav-swarms-in-future-warfare}
+}
+
+@report{bondar2024military,
+  author = {Bondar, Kateryna},
+  title = {Understanding the Military {AI} Ecosystem of Ukraine},
+  institution = {Center for Strategic and International Studies},
+  year = {2024},
+  month = {November},
+  day = {12},
+  url = {https://www.csis.org/analysis/understanding-military-ai-ecosystem-ukraine}
+}
+
+@report{radin2025lessons,
+  author = {Radin, Andrew and Holynska, Khrystyna and Tretter, Cheyenne and Van Bibber, Thomas},
+  title = {Lessons from the War in Ukraine for Space: Challenges and Opportunities for Future Conflicts},
+  institution = {RAND Corporation},
+  year = {2025},
+  month = {May},
+  day = {21},
+  number = {RR-A2950-1},
+  url = {https://www.rand.org/pubs/research_reports/RRA2950-1.html}
+}
+
+@report{soesanto2024ukrainian,
+  author = {Soesanto, Stefan},
+  title = {The Ukrainian Way of Digital Warfighting: Volunteers, Applications, and Intelligence Sharing Platforms},
+  institution = {Center for Security Studies (CSS), ETH Zürich},
+  year = {2024},
+  month = {July},
+  series = {CSS Cyberdefense Report},
+  url = {http://hdl.handle.net/20.500.11850/685245}
+}
+
+@book{erickson2024chinese,
+  editor = {Erickson, Andrew S. and Kennedy, Conor M. and Martinson, Ryan D.},
+  title = {Chinese Amphibious Warfare: Prospects for a Cross-Strait Invasion},
+  publisher = {Naval War College Press},
+  address = {Newport, RI},
+  year = {2024},
+  month = {November},
+  series = {Studies in Chinese Maritime Development},
+  number = {8},
+  isbn = {978-1-935352-86-0},
+  url = {https://digital-commons.usnwc.edu/cmsi-studies/8/}
+}
+
+@report{osd2024china,
+  author = {{Office of the Secretary of Defense}},
+  title = {Military and Security Developments Involving the People's Republic of China 2024},
+  institution = {U.S. Department of Defense},
+  address = {Washington, D.C.},
+  year = {2024},
+  month = {December},
+  day = {18},
+  note = {Annual Report to Congress},
+  url = {https://media.defense.gov/2024/Dec/18/2003615520/-1/-1/0/MILITARY-AND-SECURITY-DEVELOPMENTS-INVOLVING-THE-PEOPLES-REPUBLIC-OF-CHINA-2024.PDF}
+}
+
+@book{alberts2000network,
+  author = {Alberts, David S. and Garstka, John J. and Stein, Frederick P.},
+  title = {Network Centric Warfare: Developing and Leveraging Information Superiority},
+  edition = {2nd revised},
+  publisher = {DoD Command and Control Research Program},
+  series = {CCRP Publication Series},
+  address = {Washington, D.C.},
+  year = {2000},
+  month = {February},
+  url = {https://apps.dtic.mil/sti/citations/tr/ADA406255}
+}
+
+@inproceedings{madison2024scalable,
+  author = {Madison, Anna and Novoseller, Ellen and Goecks, Vinicius G. and Files, Benjamin T. and Waytowich, Nicholas and Yu, Alfred and Lawhern, Vernon J. and Thurman, Steven and Kelshaw, Christopher and McDowell, Kaleb},
+  title = {Scalable Interactive Machine Learning for Future Command and Control},
+  booktitle = {Proceedings of the International Conference on Military Communication and Information Systems (ICMCIS)},
+  year = {2024},
+  eprint = {2402.06501v2},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/html/2402.06501v2}
+}
+
+@inproceedings{mcdowell2024reenvisioning,
+  author = {McDowell, Kaleb and Novoseller, Ellen and Madison, Anna and Goecks, Vinicius G. and Kelshaw, Christopher},
+  title = {Re-Envisioning Command and Control},
+  booktitle = {Proceedings of the International Conference on Military Communication and Information Systems (ICMCIS)},
+  year = {2024},
+  eprint = {2402.07946v2},
+  archivePrefix = {arXiv},
+  url = {https://arxiv.org/html/2402.07946v2}
+}
+
+@article{cebrowski1998network,
+  author = {Cebrowski, Arthur K. and Garstka, John J.},
+  title = {Network-Centric Warfare: Its Origin and Future},
+  journal = {U.S. Naval Institute Proceedings},
+  volume = {124},
+  number = {1},
+  pages = {28--35},
+  year = {1998},
+  month = {January},
+  url = {https://www.usni.org/magazines/proceedings/1998/january/network-centric-warfare-its-origin-and-future}
+}
+
+@book{clausewitz1984war,
+  author = {von Clausewitz, Carl},
+  title = {On War},
+  editor = {Howard, Michael Eliot and Paret, Peter},
+  publisher = {Princeton University Press},
+  address = {Princeton, NJ},
+  year = {1984}
+}
+
+@report{pettyjohn2025countering,
+  author = {Pettyjohn, Stacie and Campbell, Molly},
+  title = {Countering the Swarm: Protecting the Joint Force in the Drone Age},
+  institution = {Center for a New American Security},
+  year = {2025},
+  month = {September},
+  day = {10},
+  url = {https://www.cnas.org/publications/reports/countering-the-swarm}
+}
+
+@report{bondar2025ukraine,
+  author = {Bondar, Kateryna},
+  title = {Ukraine's Future Vision and Current Capabilities for Waging {AI}-Enabled Autonomous Warfare},
+  institution = {Center for Strategic and International Studies},
+  year = {2025},
+  month = {March},
+  day = {6},
+  url = {https://www.csis.org/analysis/ukraines-future-vision-and-current-capabilities-waging-ai-enabled-autonomous-warfare}
+}
+```
 # References {-}
 
 ::: {#refs}
